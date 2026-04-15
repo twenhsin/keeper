@@ -60,7 +60,7 @@ body {
   position: fixed;
   inset: 0;
   z-index: 0;
-  background-image: url('/images/page-bg-m.svg');
+  background-image: url('/images/page-bg-m.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
