@@ -342,7 +342,7 @@ function scrollToBottom() {
   resize: none;
   padding: 0;
   font-family: inherit;
-  font-size: var(--typography-body-size);
+  font-size: 16px;
   color: var(--text-primary);
   line-height: var(--typography-body-line-height);
   overflow-y: hidden;

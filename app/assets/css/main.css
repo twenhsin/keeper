@@ -1,9 +1,26 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;600;700&display=swap');
 @import './tokens.css';
 
+html, body {
+  height: 100%;
+  min-height: 100dvh;
+  overflow: hidden;
+}
+
 html {
   font-size: 62.5%; /* 1rem = 10px */
   font-family: 'Noto Serif TC', serif;
+}
+
+#__nuxt {
+  height: 100dvh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* iOS Safari zoom 防止（font-size < 16px 會觸發自動縮放） */
+input, textarea, select {
+  font-size: 16px;
 }
 
 /* ===== 全站共用 Tab 樣式 ===== */
