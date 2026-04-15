@@ -8,7 +8,7 @@
 ## 一、任務定義
 
 收到 Figma 截圖時，依照本文件規則將截圖還原為 Nuxt 3 + Vue 3 頁面程式碼。
-截圖來源：Figma 直接截圖。
+截圖來源：Figma 直接截圖或瀏覽器畫面。
 
 ---
 
@@ -110,91 +110,94 @@ pages/
 
 ### 頁面結構模板
 
+**index.vue 例外**，維持獨立結構（對話區捲動 + 輸入框 fixed）。
+
+其餘所有頁面採三區塊固定佈局：
+
 ```vue
 <template>
   <div class="page">
-    <!-- 背景層 -->
-    <div class="page-bg" aria-hidden="true">
-      <div class="bg-blob bg-blob--top-right" />
-      <div class="bg-blob bg-blob--top-left" />
-      <div class="bg-blob bg-blob--bottom" />
+    <!-- PageHeader（fixed） -->
+    <div class="header-wrapper">
+      <PageHeader title="頁面標題" />
+      <!-- 若有 Tab，放在 PageHeader 下方，間距 16px -->
     </div>
 
-    <!-- 內容層 -->
-    <div class="page-content">
-      <PageHeader title="頁面標題" />
+    <!-- 可捲動內容區（fixed） -->
+    <div class="main-content">
       <!-- 頁面內容 -->
     </div>
 
-    <!-- 底部導航 -->
+    <!-- BottomNav（fixed） -->
     <BottomNav active="pageName" />
   </div>
 </template>
 
 <style scoped>
 .page {
-  position: relative;
-  min-height: 100dvh;
-  padding: var(--spacing-page-top) var(--spacing-page-x) var(--spacing-page-bottom);
-  overflow: hidden;
+  height: 100dvh;
 }
-.page-bg {
+
+/* PageHeader：fixed，背景透明 */
+.header-wrapper {
   position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: var(--spacing-page-top) var(--spacing-page-x) 0;
+  background: transparent;
 }
-.page-content {
-  position: relative;
-  z-index: 1;
+
+/* content：fixed，top / bottom 依變體決定 */
+.main-content {
+  position: fixed;
+  top: 111px;    /* 無 Tab：40 + 39 + 32 */
+  /* top: 161px; 有 Tab：40 + 89 + 32 */
+  bottom: 88px;  /* 24 + 32 + 32 */
+  left: 0;
+  right: 0;
+  padding: 0 var(--spacing-page-x) var(--spacing-page-x);
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.main-content::-webkit-scrollbar {
+  display: none;
+}
+
+/* 桌機版 */
+@media (min-width: 768px) {
+  .page {
+    padding-left: 80px;
+  }
+  .header-wrapper {
+    left: 80px;
+  }
+  .main-content {
+    left: 80px;
+    max-width: 800px;
+    margin-right: auto;
+    bottom: 32px;
+  }
 }
 </style>
 ```
 
-### 背景色塊規格
+**content top 速查：**
 
-三個色塊固定，所有頁面共用，定義在 `layouts/default.vue` 或全域 CSS：
+| 頁面變體 | top 值 | 說明 |
+|---------|--------|------|
+| 無 Tab | 111px | 40 + 39 + 32 |
+| 有 Tab | 161px | 40 + 89 + 32 |
 
-```css
-/* 右上方 Radial（圓形）*/
-.bg-blob--top-right {
-  position: absolute;
-  top: 0; right: 0;
-  width: 456px; height: 649px;
-  border-radius: 50%;
-  background: radial-gradient(circle,
-    rgba(254,238,234,0.9) 3%,
-    rgba(249,237,226,1.0) 54%,
-    rgba(255,253,230,0.5) 92%
-  );
-}
+**對話框（index、plans/backlog）：**
+- position: fixed
+- bottom: 72px（24 + 32 + 16）
+- z-index：高於 content，低於 BottomNav（z-index: 50）
+- 高度隨內容向上延展
+- content padding-bottom 需足夠大避免內容被遮住
 
-/* 左上方 Radial（橢圓）*/
-.bg-blob--top-left {
-  position: absolute;
-  top: 0; left: 0;
-  width: 679px; height: 419px;
-  border-radius: 50%;
-  background: radial-gradient(ellipse,
-    rgba(237,243,252,0.6) 0%,
-    rgba(228,235,246,0.8) 44%,
-    rgba(242,249,251,0.3) 100%
-  );
-}
-
-/* 下方 Linear（橢圓形色塊）*/
-.bg-blob--bottom {
-  position: absolute;
-  bottom: 0; left: 50%;
-  transform: translateX(-50%);
-  width: 100%; height: 420px;
-  border-radius: 50%;
-  background: linear-gradient(to bottom,
-    rgba(252,250,248,0.3) 0%,
-    rgba(249,235,238,1.0) 66%
-  );
-}
-```
 
 ---
 
@@ -233,44 +236,53 @@ pages/
 
 ## 八、各頁面生成重點
 
-### Home（index.vue）
+所有頁面（index 除外）套用三區塊固定佈局，詳見第五節模板。
 
-- 背景：三色塊（全頁共用）
-- 上方：AI 督促提醒文字（3.2rem，無氣泡框，直接顯示於背景）
+### Home（index.vue）— 例外結構
+
+- 對話區自然捲動，不使用三區塊 fixed 佈局
+- 上方：AI 督促提醒文字（2.4rem，無氣泡框）
 - 中段：對話區，AI 文字直接顯示，用戶訊息使用 `ChatBubble align="right"`
-- 底部：Input 區（兩層結構：底層漸層 + 上層白色，shadow 規格見 design-system.md）
-- 底部導航：`BottomNav active="home"`
+- 輸入框：fixed，bottom: 72px，兩層結構（底層漸層 + 內層白色 + Send 按鈕在右下）
+- `BottomNav active="home"`
 
-### Plans（plans.vue）
+### Plans（plans.vue）— 有 Tab，有對話框（Backlog）
 
-- PageHeader title="Plans"
-- Tab 列（Habits / Long-term / Backlog），active 狀態外框漸層
-- 清單：`PlanCard` 列表，右側 Toggle
-- 點擊卡片：彈窗覆蓋（`BaseCard padding="lg" opacity="100"`），右上角 × 關閉
-- 底部導航：`BottomNav active="plans"`
+- header-wrapper 內：PageHeader title="Plans" + Tab 列（間距 16px）
+- main-content top: 161px
+- Tab：Habits / Long-term / Backlog，active 狀態外框漸層
+- Habits / Long-term：`PlanCard` 列表，右側 Toggle，點擊開彈窗
+- Backlog：純文字清單卡片，右側 × 刪除
+- Backlog 對話框：fixed，bottom: 72px，textarea（min-height 120px）+ Send 按鈕右下
+- `BottomNav active="plans"`
 
-### Records（records.vue）
+### Records（records.vue）— 無 Tab
 
-- PageHeader title="Records"
-- 頂部：待確認打卡卡片（`TaskCard`），當天卡片與補發卡片分區塊
-- 中段：Progress report 標題 + `ProgressCard` 列表
-- 點擊 ProgressCard 進入 detail 頁：`records/[id].vue`
-- 底部導航：`BottomNav active="records"`
+- main-content top: 111px
+- 頂部：打卡卡片，按下 Check in 消失；桌機版三欄排列
+- 中段：Progress report 標題 + 統計卡片列表
+- 統計卡片：標題與數據間距 16px，This week / This month 兩欄等寬（grid 1fr 1fr）
+- 數字用 text-brand 色標示
+- 點擊統計卡片導航至 `/records-detail-[id]`
+- `BottomNav active="records"`
 
-### Records Detail（records/[id].vue）
+### Records Detail（records-detail-[id].vue）— 無 Tab
 
-- PageHeader title="Records" showBack
-- 習慣任務：`BaseCard padding="lg"`，內含標題、折線圖、週列表（勾/X 狀態）
-- 長期任務：`BaseCard padding="lg"`，內含標題、progress bar、Phase 清單
-- 底部導航：`BottomNav active="records"`
+- main-content top: 111px
+- PageHeader title="Records"，showBack: true，箭頭與標題文字皆可點擊返回
+- id=1（習慣任務）：折線圖（SVG）+ 年份 + 週列表（checkbox 三種狀態）
+- id=2（長期任務）：progress bar + Phase 清單
+- `BottomNav active="records"`
 
-### Setting（setting.vue）
+### Setting（setting.vue）— 無 Tab
 
-- PageHeader title="Setting"
-- Claude API Key：Input + 上傳按鈕（漸層圓角方形 icon 按鈕）
-- About Me：section 標題 + textarea（`BaseCard padding="lg" opacity="80"`）+ FileCard
-- Project：section 標題 + FileCard 列表
-- 底部導航：`BottomNav active="setting"`
+- main-content top: 111px
+- Claude API KEY：input 內嵌漸層上傳按鈕（按鈕在 input 右側內部）
+- About Me：section 標題 + 右側 + 按鈕 + textarea
+- Project：section 標題 + 右側 + 按鈕 + FileCard grid
+- FileCard grid：手機三欄，桌機六欄
+- Section 間距 32px，Section 標題與元素間距 12px
+- `BottomNav active="setting"`
 
 ---
 

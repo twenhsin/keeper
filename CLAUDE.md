@@ -9,7 +9,7 @@
 
 **產品名稱：** Keeper
 **定位：** 個人 AI 行為督導工具
-**完整規格：** `生活督導App_規格書_v4.md`
+**完整規格：** `生活督導App_規格書_v5.md`
 
 ---
 
@@ -51,8 +51,9 @@ keeper/
 │   ├── index.vue                — Home（對話介面）
 │   ├── plans.vue                — Plans（計畫管理）
 │   ├── records.vue              — Records（打卡記錄）
-│   ├── records/[id].vue         — Records Detail
+│   ├── records-detail-[id].vue  — Records Detail
 │   ├── setting.vue              — Setting
+│   ├── login.vue                — 登入頁
 │   └── ui-kit.vue               — UI Kit 展示頁
 ├── components/
 │   ├── BottomNav.vue
@@ -138,3 +139,39 @@ Vercel：Settings → Environment Variables 手動設定
 1. 變更 / 新增檔案清單（有變更時才列出）
 2. 視覺待確認項目（無法從截圖判斷的細節）
 3. 尚未處理的項目（若任務範圍內有未完成部分）
+
+## 當前開發進度
+> 最後更新：2026-04-14
+
+### 已完成
+- assets/css/tokens.css（169 tokens，Core/Semantic/Component 三層）
+- assets/css/main.css
+- app/app.vue
+- layouts/default.vue（背景圖響應式）
+- components/BottomNav.vue
+- components/PageHeader.vue（含 Tab slot，fixed 結構）
+- components/AppButton.vue
+- components/BaseCard.vue
+- components/ChatBubble.vue
+- components/TaskCard.vue
+- components/PlanCard.vue
+- components/ProgressCard.vue
+- components/FileCard.vue（含 deletable prop）
+- pages/index.vue（Home，對話區 + textarea 輸入框 + 箭頭 Send 按鈕）
+- pages/plans.vue（Plans 三 tab，Backlog 底部輸入框）
+- pages/records.vue（打卡卡片 + Progress report，桌機三欄）
+- pages/records-detail-[id].vue（習慣任務折線圖 + 長期任務 Phase 清單）
+- pages/setting.vue（API Key 驗證 + About Me + Project 文件上傳）
+- pages/login.vue（Email + 密碼登入）
+- server/api/verify-key.post.ts（API Key server 端驗證）
+- Supabase 資料表建立（users、habits、plans、backlog、task_cards、conversation_summaries、project_files、notification_logs）
+- Supabase Auth 登入設定
+- 全站三區塊固定佈局（PageHeader fixed + content fixed + BottomNav fixed）
+
+### 待完成
+- pages/ui-kit.vue
+- Claude API 接入（Home 對話功能）
+- Plans / Records 資料串接 Supabase
+- PWA 設定
+- Vercel Cron 推播通知
+- Vercel 部署

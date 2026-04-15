@@ -1,3 +1,281 @@
-/* Design tokens — CSS custom properties */
+/* ============================================================
+   KEEPER — Design Tokens
+   三層架構：Core → Semantic → Component
+   基準：html font-size 62.5%（1rem = 10px）
+   最後更新：2026-04-13
+   ============================================================ */
+
 :root {
+
+  /* ==========================================================
+     LAYER 1 — CORE TOKENS
+     原始數值，不可直接使用於元件樣式
+     ========================================================== */
+
+  /* --- Color: Brand --- */
+  --core-color-brand-primary: #FF7FDC;
+  --core-color-brand-secondary: #FFBB8E;
+  --core-color-brand-primary-active: #EE64C8;
+  --core-color-brand-secondary-active: #F4A875;
+
+  /* --- Color: Gray (Keeper 調色盤) --- */
+  --core-color-gray-100: #F0F0F0;
+  --core-color-gray-200: #E0E0E0;
+  --core-color-gray-300: #D0D0D0;
+  --core-color-gray-500: #868385;
+  --core-color-gray-700: #656264;
+  --core-color-white: #FFFFFF;
+
+  /* --- Color: Shadow base --- */
+  --core-color-shadow: #7A4099;
+
+  /* --- Color: Background stops (layouts/default.vue 使用) --- */
+  --core-color-bg-r1: #FEEEEA;
+  --core-color-bg-r2: #F9EDE2;
+  --core-color-bg-r3: #FFFDE6;
+  --core-color-bg-l1: #EDF3FC;
+  --core-color-bg-l2: #E4EBF6;
+  --core-color-bg-l3: #F2F9FB;
+  --core-color-bg-b1: #FCFAF8;
+  --core-color-bg-b2: #F9EBEE;
+
+  /* --- Gradient --- */
+  --core-gradient-brand: linear-gradient(to right, #FF7FDC, #FFBB8E);
+  --core-gradient-brand-active: linear-gradient(to right, #EE64C8, #F4A875);
+  --core-gradient-input-bg: linear-gradient(to right, #F4EED1, #F8E3DA, #DBE7F7);
+
+  /* --- Spacing (px) --- */
+  --core-spacing-100: 4px;
+  --core-spacing-200: 8px;
+  --core-spacing-300: 12px;
+  --core-spacing-400: 16px;
+  --core-spacing-500: 20px;
+  --core-spacing-600: 24px;
+  --core-spacing-700: 32px;
+  --core-spacing-800: 40px;
+  --core-spacing-900: 48px;
+
+  /* --- Border Radius (px) --- */
+  --core-radius-100: 4px;
+  --core-radius-200: 8px;
+  --core-radius-300: 12px;   /* button / tab / toast / input / md-card */
+  --core-radius-400: 16px;
+  --core-radius-500: 20px;   /* card */
+  --core-radius-full: 9999px;
+
+  /* --- Font Size (rem，1rem = 10px) --- */
+  --core-font-size-100: 1.2rem;   /* 12px — caption, tab label */
+  --core-font-size-300: 1.6rem;   /* 16px — body, 卡片小標題 */
+  --core-font-size-400: 2.0rem;   /* 20px — section 標題, 說明卡片標題 */
+  --core-font-size-500: 2.4rem;   /* 24px — AI 督促提醒 */
+  --core-font-size-600: 3.2rem;   /* 32px — 頁面大標題 */
+
+  /* --- Font Weight --- */
+  --core-font-weight-regular: 400;
+  --core-font-weight-medium: 500;
+  --core-font-weight-semibold: 600;
+  --core-font-weight-bold: 700;
+
+  /* --- Line Height --- */
+  --core-line-height-tight: 1.2;
+  --core-line-height-normal: 1.5;
+  --core-line-height-loose: 1.8;
+
+  /* --- Letter Spacing --- */
+  --core-letter-spacing-tight: -0.02em;
+  --core-letter-spacing-normal: 0em;
+  --core-letter-spacing-wide: 0.08em;
+
+  /* --- Shadow --- */
+  --core-shadow-100: 0 0 4px rgba(122, 64, 153, 0.15);    /* button hover */
+  --core-shadow-200: 0 0 24px rgba(122, 64, 153, 0.15);   /* input */
+
+  /* --- Dimension (px) --- */
+  --core-dimension-100: 16px;
+  --core-dimension-200: 24px;
+  --core-dimension-300: 32px;
+  --core-dimension-400: 40px;
+  --core-dimension-500: 48px;
+
+
+  /* ==========================================================
+     LAYER 2 — SEMANTIC TOKENS
+     賦予語意的別名，元件樣式主要使用此層
+     ========================================================== */
+
+  /* --- Text Color --- */
+  --text-primary: var(--core-color-gray-700);        /* #656264 — 主要文字 */
+  --text-inverse: var(--core-color-white);            /* #FFFFFF — 反白文字 */
+  --text-brand: var(--core-color-brand-primary);      /* #FF7FDC — 強調數字 */
+  --text-danger: var(--core-color-brand-primary);     /* #FF7FDC — 刪除 icon */
+  --text-placeholder: var(--core-color-gray-500);     /* #868385 — placeholder */
+
+  /* --- Surface Color --- */
+  --surface-card: rgba(255, 255, 255, 1.0);           /* 彈窗卡片 */
+  --surface-card-list: rgba(255, 255, 255, 0.4);      /* 清單/report/文件卡片 */
+  --surface-card-list-border: rgba(255, 255, 255, 0.8); /* 清單卡片邊框 */
+  --surface-input: rgba(255, 255, 255, 0.8);          /* Input 上層 */
+  --surface-textarea: rgba(255, 255, 255, 0.8);       /* Textarea */
+
+  /* --- Gradient --- */
+  --gradient-brand: var(--core-gradient-brand);
+  --gradient-brand-active: var(--core-gradient-brand-active);
+  --gradient-input-bg: var(--core-gradient-input-bg);
+
+  /* --- UI Color --- */
+  --ui-checkbox-empty-bg: var(--core-color-white);
+  --ui-checkbox-empty-border: var(--core-color-gray-200);    /* #E0E0E0 */
+  --ui-checkbox-miss: var(--core-color-gray-300);            /* #D0D0D0 */
+  --ui-toggle-off: var(--core-color-gray-300);               /* #D0D0D0 */
+  --ui-divider: var(--core-color-gray-100);                  /* #F0F0F0 */
+  --ui-progress-track: var(--core-color-gray-100);           /* #F0F0F0 */
+
+  /* --- Interactive Color --- */
+  --interactive-default: var(--core-color-brand-primary);
+  --interactive-hover: var(--core-color-brand-secondary);
+  --interactive-disabled: var(--core-color-gray-300);
+
+  /* --- Spacing: Page Layout --- */
+  --spacing-page-x: var(--core-spacing-600);               /* 24px 頁面左右 padding */
+  --spacing-page-top: var(--core-spacing-800);              /* 40px 頁面上方 padding */
+  --spacing-page-bottom: var(--core-spacing-600);           /* 24px 頁面下方 padding */
+
+  /* --- Spacing: Gap --- */
+  --spacing-gap-header-tab: var(--core-spacing-400);        /* 16px header title 與 tab */
+  --spacing-gap-header-content: var(--core-spacing-700);    /* 32px header 與 content */
+  --spacing-gap-section: var(--core-spacing-700);           /* 32px section 上下 */
+  --spacing-gap-section-title: var(--core-spacing-300);     /* 12px section title 與物件 */
+  --spacing-gap-card: var(--core-spacing-300);              /* 12px 卡片間距 */
+  --spacing-gap-chat: var(--core-spacing-600);              /* 24px 對話問答 */
+  --spacing-gap-task-btn: var(--core-spacing-600);          /* 24px 打卡卡片文字與按鈕 */
+
+  /* --- Spacing: Padding --- */
+  --spacing-padding-card-sm: var(--core-spacing-400);       /* 16px 清單/report/文件 */
+  --spacing-padding-card-lg: var(--core-spacing-600);       /* 24px 彈窗/打卡/detail */
+  --spacing-padding-btn-x: var(--core-spacing-400);         /* 16px button 左右 */
+  --spacing-padding-btn-y: var(--core-spacing-300);         /* 12px button 上下 */
+  --spacing-padding-dialog: var(--core-spacing-400);        /* 16px 用戶對話框 */
+
+  /* --- Typography: 頁面大標題 (32px Regular) --- */
+  --typography-display-size: var(--core-font-size-600);
+  --typography-display-weight: var(--core-font-weight-regular);
+  --typography-display-line-height: var(--core-line-height-tight);
+
+  /* --- Typography: Section 標題 (20px Regular) --- */
+  --typography-heading-size: var(--core-font-size-400);
+  --typography-heading-weight: var(--core-font-weight-regular);
+  --typography-heading-line-height: var(--core-line-height-normal);
+
+  /* --- Typography: 說明卡片標題 (20px Semibold) --- */
+  --typography-subheading-size: var(--core-font-size-400);
+  --typography-subheading-weight: var(--core-font-weight-semibold);
+  --typography-subheading-line-height: var(--core-line-height-normal);
+
+  /* --- Typography: 卡片小標題 (16px Semibold) --- */
+  --typography-label-size: var(--core-font-size-300);
+  --typography-label-weight: var(--core-font-weight-semibold);
+  --typography-label-line-height: var(--core-line-height-normal);
+
+  /* --- Typography: 內文 (16px Regular) --- */
+  --typography-body-size: var(--core-font-size-300);
+  --typography-body-weight: var(--core-font-weight-regular);
+  --typography-body-line-height: var(--core-line-height-normal);
+
+  /* --- Typography: AI 督促提醒 (24px Regular) --- */
+  --typography-ai-size: var(--core-font-size-500);
+  --typography-ai-weight: var(--core-font-weight-regular);
+  --typography-ai-line-height: var(--core-line-height-normal);
+
+  /* --- Typography: Caption / Tab label (12px Regular) --- */
+  --typography-caption-size: var(--core-font-size-100);
+  --typography-caption-weight: var(--core-font-weight-regular);
+  --typography-caption-line-height: var(--core-line-height-normal);
+
+  /* --- Border Radius --- */
+  --radius-button: var(--core-radius-300);       /* 12px */
+  --radius-tab: var(--core-radius-300);          /* 12px */
+  --radius-toast: var(--core-radius-300);        /* 12px */
+  --radius-input: var(--core-radius-300);        /* 12px */
+  --radius-md-card: var(--core-radius-300);      /* 12px */
+  --radius-card: var(--core-radius-500);         /* 20px */
+  --radius-toggle: var(--core-radius-full);      /* 9999px */
+  --radius-progress: var(--core-radius-full);    /* 9999px */
+
+  /* --- Shadow --- */
+  --shadow-input: var(--core-shadow-200);
+  --shadow-btn-hover: var(--core-shadow-100);
+
+
+  /* ==========================================================
+     LAYER 3 — COMPONENT TOKENS
+     特定元件狀態覆寫，限對應元件使用
+     ========================================================== */
+
+  /* --- Button --- */
+  --btn-bg: var(--gradient-brand);
+  --btn-bg-active: var(--gradient-brand-active);
+  --btn-text: var(--text-inverse);
+  --btn-radius: var(--radius-button);
+  --btn-padding-x: var(--spacing-padding-btn-x);
+  --btn-padding-y: var(--spacing-padding-btn-y);
+  --btn-font-size: var(--typography-body-size);
+  --btn-font-weight: var(--typography-body-weight);
+  --btn-shadow-hover: var(--shadow-btn-hover);
+  --btn-opacity-disabled: 0.5;
+
+  /* --- Input --- */
+  --input-bg: var(--surface-input);
+  --input-bg-layer: var(--gradient-input-bg);
+  --input-border: rgba(255, 255, 255, 0.8);
+  --input-shadow: var(--shadow-input);
+  --input-radius: var(--radius-input);
+  --input-placeholder-color: var(--text-placeholder);
+  --input-placeholder-size: var(--typography-body-size);
+
+  /* --- Toggle --- */
+  --toggle-bg-on: var(--gradient-brand);
+  --toggle-bg-off: var(--ui-toggle-off);
+  --toggle-radius: var(--radius-toggle);
+
+  /* --- Checkbox --- */
+  --checkbox-bg-done: var(--gradient-brand);
+  --checkbox-bg-empty: var(--ui-checkbox-empty-bg);
+  --checkbox-border-empty: var(--ui-checkbox-empty-border);
+  --checkbox-bg-miss: var(--ui-checkbox-miss);
+
+  /* --- Progress Bar --- */
+  --progress-track: var(--ui-progress-track);
+  --progress-fill: var(--gradient-brand);
+  --progress-radius: var(--radius-progress);
+
+  /* --- Tab (Plans 頁) --- */
+  --tab-border-active: var(--gradient-brand);
+  --tab-text: var(--text-primary);
+  --tab-radius: var(--radius-tab);
+
+  /* --- Bottom Nav --- */
+  --nav-border-active: var(--gradient-brand);
+  --nav-text: var(--text-primary);
+
+  /* --- Toast / Banner --- */
+  --toast-bg: var(--gradient-brand);
+  --toast-text: var(--text-inverse);
+  --toast-radius: var(--radius-toast);
+
+  /* --- Card (清單/report/文件) --- */
+  --card-bg: var(--surface-card-list);
+  --card-border: var(--surface-card-list-border);
+  --card-radius: var(--radius-card);
+  --card-padding: var(--spacing-padding-card-sm);
+
+  /* --- Card (彈窗) --- */
+  --card-modal-bg: var(--surface-card);
+  --card-modal-radius: var(--radius-card);
+  --card-modal-padding: var(--spacing-padding-card-lg);
+
+  /* --- MD Card (文件卡片) --- */
+  --md-card-bg: var(--surface-card-list);    /* rgba(255,255,255,0.4) */
+  --md-card-radius: var(--radius-md-card);
+  --md-card-padding: var(--spacing-padding-card-sm);
+
 }

@@ -1,7 +1,7 @@
-# 生活督導 App 規格書 v4
+# 生活督導 App 規格書 v5
 
-> 更新日期：2026-04-13
-> 版本：v4（補充通知排程細節、資料表新增 notification_logs、users 補充欄位、Skills 架構說明、App 命名）
+> 更新日期：2026-04-14
+> 版本：v5（更新技術棧版本、Skills 狀態、專案結構、開發進度、Nuxt 4 注意事項）
 
 ---
 
@@ -16,13 +16,15 @@
 
 | 元件 | 技術 |
 |------|------|
-| 前端框架 | Nuxt 3 + Vue 3 |
+| 前端框架 | Nuxt 4.4.2 + Vue 3 |
 | 樣式 | Tailwind CSS |
 | 資料庫 | Supabase |
 | AI 模型 | Claude API（用戶自帶 API Key）|
 | 部署 | Vercel |
 | 通知排程 | Vercel Cron + Web Push API |
 | 裝置支援 | PWA（手機加入主畫面）+ 桌機瀏覽器 |
+| Node.js | v20 LTS |
+| 套件管理 | npm |
 
 ---
 
@@ -347,9 +349,9 @@ Web Push API 推送通知到用戶裝置
 
 ## 九、Skills 架構
 
-專案 Skills 存放於 `skills/` 資料夾，分為兩類：
+專案 Skills 存放於 `Skills/` 資料夾，分為兩類：
 
-### 產品邏輯 Skills（`skills/product/`）
+### 產品邏輯 Skills（`Skills/product/`）
 
 | 檔案 | 用途 | 狀態 |
 |------|------|------|
@@ -358,14 +360,17 @@ Web Push API 推送通知到用戶裝置
 | `task-card-logic.md` | 卡片出現規則、補發邏輯、狀態更新 | ✅ 完成 |
 | `notification-schedule.md` | 通知觸發架構、Web Push 實作、裝置支援 | ✅ 完成 |
 
-### 開發工具 Skills（`skills/dev/`）
+### 開發工具 Skills（`Skills/dev/`）
 
 | 檔案 | 用途 | 狀態 |
 |------|------|------|
-| `ui-codegen.md` | 截圖→頁面，Nuxt + Tailwind 程式碼生成規範 | 待撰寫 |
-| `design-tokens.md` | Token 命名結構、輸出格式規範 | 待撰寫 |
-| `component-gen.md` | 元件抽取規則與輸出格式 | 待撰寫 |
-| `design-spec.md` | 規範文件生成規則 | 待撰寫 |
+| `design-system.md` | 視覺規則基礎（色票、字級、spacing、元件規格）| ✅ 完成 |
+| `design-tokens.md` | Token 命名結構、三層架構、輸出格式規範 | ✅ 完成 |
+| `ui-codegen.md` | 截圖→頁面，Nuxt + Tailwind 程式碼生成規範 | ✅ 完成 |
+| `component-gen.md` | 元件抽取規則、元件清單、Vue 元件程式碼輸出 | ✅ 完成 |
+| `ui-kit.md` | UI Kit 頁面生成、視覺規範展示頁輸出 | ✅ 完成 |
+
+> `design-spec.md` 已移除，功能合併至 `ui-kit.md`
 
 ---
 
@@ -407,7 +412,92 @@ Web Push API 推送通知到用戶裝置
 
 ---
 
-## 十二、Claude API 使用說明
+## 十二、專案結構
+
+```
+keeper/
+├── CLAUDE.md                    — 專案入口文件
+├── docs/
+│   └── 生活督導App_規格書_v5.md  — 本文件
+├── Skills/
+│   ├── dev/                     — 開發工具 Skills（5 份）
+│   └── product/                 — 產品邏輯 Skills（4 份）
+├── app/                         — Nuxt 4 srcDir（所有前端檔案在此）
+│   ├── app.vue                  — 根元件（NuxtLayout + NuxtPage）
+│   ├── assets/css/
+│   │   ├── tokens.css           — 169 個 CSS custom properties
+│   │   └── main.css             — 全域樣式、字型
+│   ├── components/
+│   │   ├── BottomNav.vue        — 手機底部 + 桌機左側 sidebar
+│   │   ├── PageHeader.vue
+│   │   ├── AppButton.vue
+│   │   ├── BaseCard.vue
+│   │   ├── ChatBubble.vue
+│   │   ├── TaskCard.vue
+│   │   ├── PlanCard.vue
+│   │   ├── ProgressCard.vue
+│   │   └── FileCard.vue
+│   ├── layouts/
+│   │   └── default.vue          — 背景圖（手機/桌機響應式）
+│   └── pages/
+│       ├── index.vue            — Home ✅
+│       ├── plans.vue            — Plans ✅（進行中）
+│       ├── records.vue          — Records 待完成
+│       ├── records/[id].vue     — Records Detail 待完成
+│       ├── setting.vue          — Setting 待完成
+│       └── ui-kit.vue           — UI Kit 展示頁 待完成
+├── public/
+│   └── images/page/
+│       ├── page-bg.svg          — 桌機版背景
+│       └── page-bg-m.svg        — 手機版背景
+└── nuxt.config.ts
+
+```
+
+**Nuxt 4 注意事項：**
+- `srcDir` 預設為 `app/`，所有前端檔案在 `app/` 下
+- `app/app.vue` 必須改為 `<NuxtLayout><NuxtPage /></NuxtLayout>`，否則 pages router 不生效
+- 元件引用路徑從 `app/components/` 開始，不需要加 `app/` 前綴
+
+---
+
+## 十三、當前開發進度
+> 最後更新：2026-04-14
+
+### 已完成
+- assets/css/tokens.css（169 tokens，Core/Semantic/Component 三層）
+- assets/css/main.css
+- app/app.vue
+- layouts/default.vue（背景圖響應式）
+- components/BottomNav.vue
+- components/PageHeader.vue
+- components/AppButton.vue
+- components/BaseCard.vue
+- components/ChatBubble.vue
+- pages/index.vue（Home）
+- pages/plans.vue（Plans 三 tab）
+- pages/records.vue（打卡卡片 + Progress report）
+- pages/records-detail-[id].vue（習慣任務 + 長期任務 detail）
+- pages/setting.vue（API Key 驗證 + About Me + Project 文件上傳）
+- pages/login.vue
+- server/api/verify-key.post.ts
+- Supabase 資料表建立與 RLS 設定
+- Supabase Auth 登入
+- 全站三區塊固定佈局
+
+### 進行中
+- Claude API 接入（Home 對話功能）
+
+### 待完成
+- pages/ui-kit.vue
+- Plans / Records 資料串接 Supabase
+- PWA 設定
+- Vercel Cron 推播通知
+- Vercel 部署
+
+---
+
+## 十四、Claude API 使用說明
 
 - 用戶需自行至 [console.anthropic.com](https://console.anthropic.com) 申請 API Key
 - 建立帳號後儲值（最低 $5 美金），產生 API Key 填入 Setting 頁面

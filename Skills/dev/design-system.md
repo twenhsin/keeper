@@ -39,10 +39,15 @@ linear-gradient(to right, #FF7FDC, #FFBB8E)
 
 | Token 名稱 | Hex / 描述 | 用途 |
 |-----------|-----------|------|
-| surface/card | rgba(255,255,255,1.0) | 彈窗卡片背景（100% 不透明） |
-| surface/card-list | rgba(255,255,255,0.8) | 清單卡片、report 卡片、文件卡片（80% 透明度） |
-| surface/input | rgba(255,255,255,0.8) | Input 上層白色（80% 透明度） |
-| surface/textarea | rgba(255,255,255,0.8) | About Me textarea（80% 透明度） |
+| surface/card | rgba(255,255,255,1.0) | 彈窗卡片背景（100% 不透明，無 border） |
+| surface/card-list | rgba(255,255,255,0.4) | 清單卡片、report 卡片、文件卡片 |
+| surface/input | rgba(255,255,255,0.4) | Input 上層白色 |
+| surface/textarea | rgba(255,255,255,0.4) | About Me textarea |
+
+**非彈窗卡片共用規則：**
+- 背景：rgba(255,255,255,0.4)
+- Border：1px solid rgba(255,255,255,1.0)
+- 彈窗卡片（surface/card）無 border，背景不透明
 
 **Input 底層漸層**
 三色橫向漸層：
@@ -127,8 +132,8 @@ linear-gradient(to bottom,
 | 說明卡片標題 | 20px | 2.0rem | Semibold (600) | Plans detail 卡片標題 |
 | Section 標題 | 20px | 2.0rem | Regular (400) | Progress report 標題 |
 | 卡片小標題 | 16px | 1.6rem | Semibold (600) | 清單卡片任務名稱 |
-| 內文 | 16px | 1.6rem | Regular (400) | 對話文字、說明文字 |
-| 小字 / Caption | 12px | 1.2rem | Regular (400) | This week、Tab label |
+| 內文 | 16px | 1.6rem | Regular (400) | 對話文字、說明文字、This week |
+| 小字 / Caption | 14px | 1.4rem | Regular (400) | Tab label |
 
 ---
 
@@ -186,11 +191,17 @@ linear-gradient(to bottom,
 | 按鈕 | 12px |
 | Tab | 12px |
 | Toast | 12px |
-| 對話框（白色） | 12px |
+| 對話框（白色） | 20px |
+| 對話框外層漸層容器 | 24px |
 | 卡片 | 20px |
 | Toggle | 9999px（full） |
 | 上傳按鈕（Setting） | 12px |
 | 文件卡片（MD card） | 12px |
+
+**對話框雙層結構：**
+- 外層：漸層背景容器，圓角 24px
+- 內層：白色背景，圓角 20px
+- 外層比內層多 4px，確保漸層邊框視覺寬度一致
 
 ---
 
@@ -206,25 +217,39 @@ linear-gradient(to bottom,
 ## 六、元件規格
 
 ### Button
-- 樣式：漸層填色（#FF7FDC → #FFBB8E）
+
+**共用規則：**
+- 漸層填色（#FF7FDC → #FFBB8E）
 - 文字：#FFFFFF，1.6rem，Regular
-- 圓角：12px
-- Padding：上下 12px，左右 16px
 - 狀態：
   - default：漸層（#FF7FDC → #FFBB8E）
   - hover：default 漸層 + shadow（color #7A4099，opacity 15%，blur 4px，x 0，y 0）
   - active：漸層（#EE64C8 → #F4A875）
   - disabled：opacity 50%
 
+**變體：**
+
+| 變體 | 尺寸 | 圓角 | Padding | 用途 |
+|------|------|------|---------|------|
+| 大按鈕（primary） | 全寬 × 40px | 12px | 上下 0，左右 16px | 主要操作按鈕 |
+| 方形按鈕（icon） | 40 × 40px | 12px | 無（固定尺寸） | API Key 上傳、單一 icon 操作 |
+| 圓形（nav active） | 40 × 40px | 50% | 無（固定尺寸） | 桌機 sidebar active 狀態 |
+
 ### Toggle
 - On：漸層填色（#FF7FDC → #FFBB8E）
 - Off：#D0D0D0
 - 圓角：full
 
-### Tab（Plans 頁）
-- Active：外框線漸層（#FF7FDC → #FFBB8E），文字 #363134
-- Inactive：無框，文字 #363134
+### Tab（通用規則，適用所有頁面）
+- 背景：rgba(255,255,255,0.8)
 - 圓角：12px
+- Padding：上下 8px，左右 16px
+- Active：外框線漸層（#FF7FDC → #FFBB8E）
+- Inactive：無外框
+- Tab 之間 gap：12px
+- CSS class：.keeper-tab（定義於 main.css，所有 tab 統一引用）
+
+適用範圍：Plans 頁 Habits/Long-term/Backlog、手機版 BottomNav、Records detail、任何分頁切換元件
 
 ### Bottom Nav
 - Active：外框線漸層（#FF7FDC → #FFBB8E）
@@ -236,12 +261,17 @@ linear-gradient(to bottom,
 - 下層：漸層背景（#F4EED1 → #F8E3DA → #DBE7F7）
 - Stroke：白色，opacity 80%
 - Shadow：#7A4099，opacity 15%，blur 24px
-- 圓角：12px
 - Placeholder 文字：'Reply'，字色 #868385，字級 1.6rem
 
+**對話框雙層結構：**
+- 外層：漸層背景容器，圓角 24px
+- 內層：白色背景，圓角 20px
+- 外層比內層多 4px，確保漸層邊框視覺寬度一致
+
 ### Card（清單、report、、打卡、detail）
-- 背景：rgba(255,255,255,0.8)
+- 背景：rgba(255,255,255,0.4)
 - 圓角：20px
+- Border：1px solid rgba(255,255,255,1.0)
 - Shadow：無
 - Padding：16px
 
@@ -267,10 +297,15 @@ linear-gradient(to bottom,
 - 圓角：full
 
 ### 文件卡片（MD card）
-- 背景：#FFFFFF
+- 背景：rgba(255,255,255,0.4)
+- Border：1px solid rgba(255,255,255,1.0)
 - 圓角：12px
 - Padding：16px
 - 包含：檔名（16px Semibold）+ 副標籤「MD」（12px）
+- 高度：160px
+- 寬度：由父層 grid 決定，不寫死
+  - 手機版：grid-template-columns: repeat(3, 1fr)
+  - 桌機版（≥ 768px）：grid-template-columns: repeat(6, 1fr)
 
 ---
 
@@ -282,3 +317,76 @@ linear-gradient(to bottom,
 | `ui-codegen.md` | 截圖轉頁面時，以此文件為視覺對照基準 |
 | `component-gen.md` | 元件生成時，以此文件為樣式規格來源 |
 | `ui-kit.md` | UI Kit 展示頁使用此文件的所有規格 |
+
+## 八、響應式規格
+
+### 版面切換斷點
+- 手機版：< 768px
+- 桌機版：≥ 768px
+
+### 手機版
+- 導覽列：底部水平，純文字標籤，無 icon，高度 32px
+- 頁面左右 padding：24px
+
+### 桌機版
+- 導覽列：左側垂直，含 icon（Lucide Vue Next）
+- 導覽列寬度：80px
+- icon 尺寸：24×24px
+- active 狀態：漸層圓形背景
+- 主內容區：max-width 800px，margin auto，置中
+- 頁面左右 padding：40px
+
+---
+
+## 九、頁面佈局結構
+
+### 三區塊固定佈局（index.vue 除外）
+
+所有頁面由三個固定區塊組成，互不重疊：
+
+| 區塊 | position | 說明 |
+|------|----------|------|
+| PageHeader | fixed，top: 0 | 頁面標題，含或不含 Tab |
+| content | fixed，top / bottom 依變體計算 | 可捲動內容區 |
+| BottomNav | fixed，bottom: 0 | 手機底部導覽 / 桌機左側 sidebar |
+
+**PageHeader 高度：**
+- 含 Tab：89px（不含頁面上方 padding 40px）
+- 不含 Tab：39px（不含頁面上方 padding 40px）
+
+**BottomNav 高度：** 32px（不含頁面下方 padding 24px）
+
+**content top：**
+- 含 Tab：40 + 89 + 32 = 161px
+- 不含 Tab：40 + 39 + 32 = 111px
+
+**content bottom：** 24 + 32 + 32 = 88px
+
+**PageHeader 背景：** 透明，捲動時內容滑入後方被裁切
+
+---
+
+### 對話框定位（index、plans/backlog）
+
+- position: fixed
+- bottom: 72px（頁面底部 padding 24px + BottomNav 32px + 間距 16px）
+- z-index：高於 content，低於 BottomNav
+- 高度隨文字內容向上延展
+- content padding-bottom 需足夠大，確保最後一筆內容不被對話框遮住
+
+---
+
+### index.vue 例外
+
+index 頁面維持獨立結構，不套用三區塊固定佈局：
+- 對話區自然捲動
+- 輸入框 fixed，bottom: 72px
+
+---
+
+### 桌機版佈局
+
+- BottomNav 改為左側 fixed sidebar，寬度 80px
+- PageHeader：left: 80px，fixed
+- content：left: 80px，max-width 800px，margin-right: auto
+- 對話框：left: 80px + spacing-page-x，right: spacing-page-x

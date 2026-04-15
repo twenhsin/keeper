@@ -1,6 +1,43 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;600;700&display=swap');
+@import './tokens.css';
 
 html {
   font-size: 62.5%; /* 1rem = 10px */
   font-family: 'Noto Serif TC', serif;
+}
+
+/* ===== 全站共用 Tab 樣式 ===== */
+.keeper-tab {
+  position: relative;
+  padding: var(--core-spacing-200) var(--core-spacing-400); /* 8px 16px */
+  border: none;
+  border-radius: var(--radius-tab); /* 12px */
+  background: rgba(255, 255, 255, 0.8);
+  font-size: var(--typography-caption-size);
+  font-weight: var(--typography-caption-weight);
+  line-height: var(--typography-caption-line-height);
+  font-family: inherit;
+  color: var(--text-primary);
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Active：漸層外框線（mask 技巧） */
+.keeper-tab--active::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 1.5px;
+  background: var(--gradient-brand);
+  border-radius: var(--radius-tab);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
 }
