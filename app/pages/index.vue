@@ -254,12 +254,12 @@ function scrollToBottom() {
 </script>
 
 <style scoped>
-/* ===== 頁面容器 ===== */
+/* ===== 頁面容器（fixed inset 防止 iOS 鍵盤推移） ===== */
 .page {
+  position: fixed;
+  inset: 0;
   display: flex;
   flex-direction: column;
-  height: 100dvh;
-  overflow: hidden;
 }
 
 /* ===== 主內容區 ===== */
@@ -268,22 +268,20 @@ function scrollToBottom() {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  /* 為 fixed input（≈88px）+ BottomNav（60px）預留底部空間 */
+  padding-bottom: 148px;
 }
 
 /* ===== 對話捲動區 ===== */
 .chat-area {
   flex: 1;
   overflow-y: auto;
-  padding: var(--spacing-page-top) var(--spacing-page-x) var(--spacing-gap-chat);
+  -webkit-overflow-scrolling: touch;
+  padding: var(--spacing-page-top) var(--spacing-page-x) 16px;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-gap-chat);
   scrollbar-width: none;
-  /*
-    手機：為 fixed input + BottomNav 預留捲動空間
-    input bottom: 98px, input 高度 ≈ 88px → top ≈ 186px from screen bottom
-  */
-  padding-bottom: 20rem;
 }
 .chat-area::-webkit-scrollbar {
   display: none;
@@ -311,9 +309,11 @@ function scrollToBottom() {
 /* ===== Input 區（手機：fixed） ===== */
 .input-section {
   position: fixed;
-  bottom: 72px;
-  left: 24px;
-  right: 24px;
+  bottom: 60px;
+  left: 0;
+  right: 0;
+  padding: 8px 24px;
+  background: transparent;
   z-index: 50;
 }
 
@@ -393,19 +393,20 @@ function scrollToBottom() {
 /* ===== Desktop (≥ 768px) ===== */
 @media (min-width: 768px) {
   .page {
-    padding-left: 80px; /* sidebar 24px margin + 80px width = 104px → 用 80px 讓內容緊靠 sidebar */
+    padding-left: 80px;
   }
 
   .main-content {
     max-width: 800px;
     margin: 0 auto;
     width: 100%;
+    padding-bottom: 0;
   }
 
   /* Desktop: input 在 flex flow 內，非 fixed */
   .input-section {
     position: static;
-    padding: 0 var(--spacing-page-x) var(--spacing-page-bottom); /* 底部 24px */
+    padding: 0 var(--spacing-page-x) var(--spacing-page-bottom);
   }
 
   /* Desktop: chat-area 恢復正常 padding-bottom */
