@@ -122,12 +122,6 @@ onMounted(async () => {
     await supabase.from('users').update({ today_messages: [], messages_date: today }).eq('id', user.id)
   }
 
-  if (messages.value.length > 0) {
-    isChatMode.value = true
-    await nextTick()
-    scrollToBottom()
-  }
-
   // ===== 拉督促提醒 =====
   try {
     const res = await $fetch('/api/chat', {
