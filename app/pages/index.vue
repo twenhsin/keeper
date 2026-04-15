@@ -5,14 +5,14 @@
     <div class="main-content">
       <!-- 對話區 -->
       <div ref="chatEl" class="chat-area">
-        <!-- 空狀態：AI 督促提醒文字 -->
-        <template v-if="messages.length === 0">
+        <!-- 督促提醒文字（非對話模式） -->
+        <template v-if="!isChatMode">
           <p class="ai-reminder">
             {{ isLoadingReminder ? '...' : reminderText }}
           </p>
         </template>
 
-        <!-- 對話訊息列表 -->
+        <!-- 對話訊息列表（對話模式） -->
         <template v-else>
           <div v-for="(msg, i) in messages" :key="i" class="msg-row">
             <ChatBubble
@@ -41,6 +41,7 @@
               @compositionstart="isComposing = true"
               @compositionend="isComposing = false"
               @input="resizeTextarea"
+              @focus="enterChatMode"
             />
             <div class="input-actions">
               <button v-if="!isLoadingChat" class="send-btn" type="button" aria-label="Send" @click="sendMessage">
@@ -75,6 +76,7 @@ const messages = ref([])
 const reminderText = ref('')
 const isLoadingReminder = ref(true)
 const isLoadingChat = ref(false)
+const isChatMode = ref(false)
 const toastText = ref('')
 
 const inputText = ref('')
@@ -85,7 +87,9 @@ const MIN_HEIGHT = 44
 let toastTimer = null
 const abortController = ref(null)
 
-/* ===== onMounted：取得用戶資料 → 拉提醒 ===== */
+const today = new Date().toLocaleDateString('zh-TW', { timeZone: 'Asia/Taipei' }).split('/').join('-')
+
+/* ===== onMounted：取得用戶資料 → 還原對話 → 拉提醒 ===== */
 onMounted(async () => {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
@@ -97,7 +101,7 @@ onMounted(async () => {
 
   const { data: userData } = await supabase
     .from('users')
-    .select('api_key')
+    .select('api_key, today_messages, messages_date')
     .eq('id', user.id)
     .single()
 
@@ -108,6 +112,21 @@ onMounted(async () => {
   }
   apiKey.value = userData.api_key
 
+  // ===== 還原當天對話記錄 =====
+  if (userData.messages_date === today) {
+    messages.value = userData.today_messages ?? []
+  } else {
+    messages.value = []
+    await supabase.from('users').update({ today_messages: [], messages_date: today }).eq('id', user.id)
+  }
+
+  if (messages.value.length > 0) {
+    isChatMode.value = true
+    await nextTick()
+    scrollToBottom()
+  }
+
+  // ===== 拉督促提醒 =====
   try {
     const res = await $fetch('/api/chat', {
       method: 'POST',
@@ -173,6 +192,7 @@ async function sendMessage() {
       const data = await res.json()
       const displayContent = await processAssistantContent(data.content)
       messages.value.push({ role: 'assistant', content: displayContent })
+      await saveMessages()
     }
   } catch (e) {
     if (e.name === 'AbortError') return
@@ -182,6 +202,22 @@ async function sendMessage() {
     isLoadingChat.value = false
     nextTick(scrollToBottom)
   }
+}
+
+/* ===== 切換到對話模式 ===== */
+function enterChatMode() {
+  if (isChatMode.value) return
+  isChatMode.value = true
+  nextTick(scrollToBottom)
+}
+
+/* ===== 寫回 Supabase ===== */
+async function saveMessages() {
+  if (!userId.value) return
+  await supabase.from('users').update({
+    today_messages: messages.value,
+    messages_date: today
+  }).eq('id', userId.value)
 }
 
 /* ===== 暫停訊息 ===== */
