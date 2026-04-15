@@ -20,7 +20,7 @@ html {
 
 /* iOS Safari zoom 防止（font-size < 16px 會觸發自動縮放） */
 input, textarea, select {
-  font-size: 16px;
+  font-size: 16px !important;
 }
 
 /* ===== 全站共用 Tab 樣式 ===== */
