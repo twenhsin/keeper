@@ -146,7 +146,7 @@ ${taskCardsBlock}
 ## 最近七天對話摘要
 ${summariesBlock}
 
-當前時間：${new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}
+當前時間：${new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false, weekday: 'long' })}
 
 ${modeInstruction[mode]}`
 

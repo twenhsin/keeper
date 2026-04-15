@@ -43,8 +43,11 @@
               @input="resizeTextarea"
             />
             <div class="input-actions">
-              <button class="send-btn" type="button" aria-label="Send" @click="sendMessage">
+              <button v-if="!isLoadingChat" class="send-btn" type="button" aria-label="Send" @click="sendMessage">
                 <ArrowUp :size="16" :stroke-width="2" />
+              </button>
+              <button v-else class="send-btn" type="button" aria-label="Stop" @click="stopMessage">
+                <Square :size="16" :stroke-width="2" />
               </button>
             </div>
           </div>
@@ -61,7 +64,7 @@
 
 <script setup>
 import { ref, nextTick, onMounted, onBeforeUnmount } from 'vue'
-import { ArrowUp } from 'lucide-vue-next'
+import { ArrowUp, Square } from 'lucide-vue-next'
 
 const supabase = useSupabaseClient()
 
@@ -80,6 +83,7 @@ const chatEl = ref(null)
 const textareaEl = ref(null)
 const MIN_HEIGHT = 44
 let toastTimer = null
+const abortController = ref(null)
 
 /* ===== onMounted：取得用戶資料 → 拉提醒 ===== */
 onMounted(async () => {
@@ -143,28 +147,48 @@ async function sendMessage() {
   resizeTextarea()
   scrollToBottom()
 
+  abortController.value = new AbortController()
+
   try {
-    const res = await $fetch('/api/chat', {
+    const res = await fetch('/api/chat', {
       method: 'POST',
-      body: {
+      signal: abortController.value.signal,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
         mode: 'chat',
         messages: messages.value.map(m => ({ role: m.role, content: m.content })),
         userId: userId.value,
         apiKey: apiKey.value
-      }
+      })
     })
-    const displayContent = await processAssistantContent(res.content)
-    messages.value.push({ role: 'assistant', content: displayContent })
-  } catch (err) {
-    if (err?.statusCode === 401) {
-      messages.value.push({ role: 'assistant', content: '請先至 Setting 設定有效的 Claude API Key' })
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}))
+      if (res.status === 401) {
+        messages.value.push({ role: 'assistant', content: '請先至 Setting 設定有效的 Claude API Key' })
+      } else {
+        messages.value.push({ role: 'assistant', content: '發生錯誤，請稍後再試' })
+      }
     } else {
-      messages.value.push({ role: 'assistant', content: '發生錯誤，請稍後再試' })
+      const data = await res.json()
+      const displayContent = await processAssistantContent(data.content)
+      messages.value.push({ role: 'assistant', content: displayContent })
     }
+  } catch (e) {
+    if (e.name === 'AbortError') return
+    messages.value.push({ role: 'assistant', content: '發生錯誤，請稍後再試' })
   } finally {
+    abortController.value = null
     isLoadingChat.value = false
     nextTick(scrollToBottom)
   }
+}
+
+/* ===== 暫停訊息 ===== */
+function stopMessage() {
+  abortController.value?.abort()
+  abortController.value = null
+  isLoadingChat.value = false
 }
 
 /* ===== 偵測 JSON → 寫入 Supabase ===== */
@@ -272,6 +296,7 @@ function scrollToBottom() {
   line-height: var(--typography-ai-line-height);
   color: var(--text-primary);
   margin: 0;
+  white-space: pre-line;
 }
 
 /* AI 訊息（無氣泡） */
