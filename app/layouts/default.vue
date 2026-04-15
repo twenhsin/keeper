@@ -1,6 +1,12 @@
 <template>
   <div class="layout">
-    <slot />
+    <!-- 背景圖層（position: fixed 避免 iOS Safari background-attachment 問題） -->
+    <div class="layout-bg" aria-hidden="true" />
+
+    <!-- 內容層 -->
+    <div class="layout-content">
+      <slot />
+    </div>
 
     <!-- 全域右上角使用者 icon -->
     <button class="user-icon-btn" type="button" aria-label="User" @click="handleUserIcon">
@@ -38,21 +44,8 @@ async function handleUserIcon() {
   box-sizing: border-box;
 }
 
-/* 背景圖套在 body（全域，非 scoped） */
 body {
   margin: 0;
-  min-height: 100dvh;
-  background-image: url('/images/page-bg-m.svg');
-  background-size: cover;
-  background-position: center top;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
-}
-
-@media (min-width: 768px) {
-  body {
-    background-image: url('/images/page-bg.svg');
-  }
 }
 </style>
 
@@ -60,6 +53,29 @@ body {
 .layout {
   position: relative;
   min-height: 100dvh;
+}
+
+/* 背景圖層：position: fixed 確保 iOS Safari 正確渲染 */
+.layout-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background-image: url('/images/page-bg-m.svg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+@media (min-width: 768px) {
+  .layout-bg {
+    background-image: url('/images/page-bg.svg');
+  }
+}
+
+/* 內容層浮在背景上 */
+.layout-content {
+  position: relative;
+  z-index: 1;
 }
 
 /* ===== 使用者 icon 按鈕 ===== */
