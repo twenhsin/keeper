@@ -37,9 +37,6 @@
               v-model="inputText"
               class="input-textarea"
               placeholder="Reply"
-              @keydown.enter="handleEnter"
-              @compositionstart="isComposing = true"
-              @compositionend="isComposing = false"
               @input="resizeTextarea"
               @focus="enterChatMode"
             />
@@ -80,14 +77,18 @@ const isChatMode = ref(false)
 const toastText = ref('')
 
 const inputText = ref('')
-const isComposing = ref(false)
 const chatEl = ref(null)
 const textareaEl = ref(null)
 const MIN_HEIGHT = 44
 let toastTimer = null
 const abortController = ref(null)
 
-const today = new Date().toLocaleDateString('zh-TW', { timeZone: 'Asia/Taipei' }).split('/').join('-')
+const today = new Date().toLocaleDateString('zh-TW', {
+  timeZone: 'Asia/Taipei',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit'
+}).replace(/\//g, '-')
 
 /* ===== onMounted：取得用戶資料 → 還原對話 → 拉提醒 ===== */
 onMounted(async () => {
@@ -113,6 +114,7 @@ onMounted(async () => {
   apiKey.value = userData.api_key
 
   // ===== 還原當天對話記錄 =====
+  console.log('today:', today, 'messages_date:', userData.messages_date)
   if (userData.messages_date === today) {
     messages.value = userData.today_messages ?? []
   } else {
@@ -145,14 +147,6 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => clearTimeout(toastTimer))
-
-/* ===== IME Enter 處理 ===== */
-function handleEnter(e) {
-  if (isComposing.value) return
-  if (e.shiftKey) return
-  e.preventDefault()
-  sendMessage()
-}
 
 /* ===== 送出訊息 ===== */
 async function sendMessage() {

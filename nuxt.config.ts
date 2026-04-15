@@ -5,7 +5,11 @@ export default defineNuxtConfig({
   modules: ['@nuxtjs/tailwindcss', '@nuxtjs/supabase'],
   css: ['@/assets/css/main.css'],
   supabase: {
-    redirect: false
+    redirectOptions: {
+      login: '/login',
+      callback: '/confirm',
+      exclude: ['/*']
+    }
   },
   app: {
     head: {
