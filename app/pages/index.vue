@@ -285,6 +285,7 @@ function scrollToBottom() {
   flex-direction: column;
   overflow: hidden;
   position: relative;
+  padding-bottom: 60px; /* BottomNav 高度，讓 flex 內容不被蓋住 */
 }
 
 /* ===== 主內容區（可捲動） ===== */
@@ -324,7 +325,7 @@ function scrollToBottom() {
 /* ===== Input 區 ===== */
 .input-section {
   flex-shrink: 0;
-  padding: 8px 24px 0;
+  padding: 8px 24px 12px;
 }
 
 /* 外層：漸層背景 + border + shadow + 8px padding */
@@ -404,6 +405,7 @@ function scrollToBottom() {
 @media (min-width: 768px) {
   .page {
     padding-left: 80px;
+    padding-bottom: 0;
   }
 
   .main-content {
