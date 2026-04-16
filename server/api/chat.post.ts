@@ -20,8 +20,10 @@ export default defineEventHandler(async (event) => {
   const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+  const twentyEightDaysAgo = new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString()
+  const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()
 
-  const [userRes, habitsRes, plansRes, taskCardsRes, summariesRes, refBooksRes] = await Promise.all([
+  const [userRes, habitsRes, plansRes, taskCardsRes, summariesRes, refBooksRes, weeklySummariesRes, monthlySummariesRes] = await Promise.all([
     supabase
       .from('users')
       .select('personal_summary, supervisor_style')
@@ -52,7 +54,19 @@ export default defineEventHandler(async (event) => {
     supabase
       .from('reference_books')
       .select('title')
+      .eq('user_id', userId),
+    supabase
+      .from('weekly_summaries')
+      .select('summary, week_start')
       .eq('user_id', userId)
+      .gte('created_at', twentyEightDaysAgo)
+      .order('week_start', { ascending: false }),
+    supabase
+      .from('monthly_summaries')
+      .select('summary, month_start')
+      .eq('user_id', userId)
+      .gte('created_at', ninetyDaysAgo)
+      .order('month_start', { ascending: false })
   ])
 
   // ===== 組裝 System Prompt =====
@@ -62,6 +76,8 @@ export default defineEventHandler(async (event) => {
   const taskCards = taskCardsRes.data ?? []
   const summaries = summariesRes.data ?? []
   const refBooks = refBooksRes.data ?? []
+  const weeklySummaries = weeklySummariesRes.data ?? []
+  const monthlySummaries = monthlySummariesRes.data ?? []
 
   const habitsBlock = habits.length > 0
     ? habits.map(h => {
@@ -166,6 +182,8 @@ ${taskCardsBlock}
 ## 最近七天對話摘要
 ${summariesBlock}
 
+${weeklySummaries.length > 0 ? `## 近四週週摘要\n${weeklySummaries.map(s => `- 週開始 ${s.week_start}：${s.summary}`).join('\n')}\n` : ''}
+${monthlySummaries.length > 0 ? `## 近三個月月摘要\n${monthlySummaries.map(s => `- ${s.month_start.slice(0, 7)}：${s.summary}`).join('\n')}\n` : ''}
 當前時間：${new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false, weekday: 'long' })}
 
 ${modeInstruction[mode]}`
