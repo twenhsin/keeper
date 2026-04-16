@@ -51,9 +51,8 @@ body {
 
 <style scoped>
 .layout {
-  position: relative;
-  min-height: 100dvh;
-  height: 100dvh;
+  position: fixed;
+  inset: 0;
   overflow: hidden;
 }
 
@@ -78,6 +77,7 @@ body {
 .layout-content {
   position: relative;
   z-index: 1;
+  width: 100%;
   height: 100%;
   overflow: hidden;
 }
