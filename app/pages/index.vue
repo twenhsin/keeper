@@ -2,7 +2,7 @@
   <div class="page">
     <BottomNav active="home" />
 
-    <div class="main-content">
+    <div ref="mainContentEl" class="main-content">
       <!-- 對話區 -->
       <div ref="chatEl" class="chat-area">
         <!-- 督促提醒文字（非對話模式） -->
@@ -26,28 +26,28 @@
           <p v-if="isLoadingChat" class="ai-text loading-dots">...</p>
         </template>
       </div>
+    </div>
 
-      <!-- 底部 Input 區 -->
-      <div class="input-section">
-        <!-- 外層：漸層背景 + border + shadow -->
-        <div class="input-outer">
-          <div class="input-inner">
-            <textarea
-              ref="textareaEl"
-              v-model="inputText"
-              class="input-textarea"
-              placeholder="Reply"
-              @input="resizeTextarea"
-              @focus="enterChatMode"
-            />
-            <div class="input-actions">
-              <button v-if="!isLoadingChat" class="send-btn" type="button" aria-label="Send" @click="sendMessage">
-                <ArrowUp :size="16" :stroke-width="2" />
-              </button>
-              <button v-else class="send-btn" type="button" aria-label="Stop" @click="stopMessage">
-                <Square :size="16" :stroke-width="2" />
-              </button>
-            </div>
+    <!-- 底部 Input 區 -->
+    <div class="input-section">
+      <!-- 外層：漸層背景 + border + shadow -->
+      <div class="input-outer">
+        <div class="input-inner">
+          <textarea
+            ref="textareaEl"
+            v-model="inputText"
+            class="input-textarea"
+            placeholder="Reply"
+            @input="resizeTextarea"
+            @focus="enterChatMode"
+          />
+          <div class="input-actions">
+            <button v-if="!isLoadingChat" class="send-btn" type="button" aria-label="Send" @click="sendMessage">
+              <ArrowUp :size="16" :stroke-width="2" />
+            </button>
+            <button v-else class="send-btn" type="button" aria-label="Stop" @click="stopMessage">
+              <Square :size="16" :stroke-width="2" />
+            </button>
           </div>
         </div>
       </div>
@@ -77,7 +77,7 @@ const isChatMode = ref(false)
 const toastText = ref('')
 
 const inputText = ref('')
-const chatEl = ref(null)
+const mainContentEl = ref(null)
 const textareaEl = ref(null)
 const MIN_HEIGHT = 44
 let toastTimer = null
@@ -271,46 +271,36 @@ function resizeTextarea() {
 }
 
 function scrollToBottom() {
-  const el = chatEl.value
+  const el = mainContentEl.value
   if (!el) return
   el.scrollTop = el.scrollHeight
 }
 </script>
 
 <style scoped>
-/* ===== 頁面容器（fixed inset 防止 iOS 鍵盤推移） ===== */
+/* ===== 頁面容器 ===== */
 .page {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-/* ===== 主內容區 ===== */
-.main-content {
-  flex: 1;
+  position: relative;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  /* 為 fixed input（≈88px）+ BottomNav（60px）預留底部空間 */
-  padding-bottom: 148px;
 }
 
-/* ===== 對話捲動區 ===== */
-.chat-area {
+/* ===== 主內容區（可捲動） ===== */
+.main-content {
   flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding: var(--spacing-page-top) var(--spacing-page-x) 16px;
+  padding: 24px 24px 16px;
+}
+
+/* ===== 對話內容區 ===== */
+.chat-area {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-gap-chat);
-  scrollbar-width: none;
 }
-.chat-area::-webkit-scrollbar {
-  display: none;
-}
-
 /* AI 督促提醒文字（空狀態） */
 .ai-reminder {
   font-size: var(--typography-ai-size);
@@ -330,13 +320,15 @@ function scrollToBottom() {
   margin: 0;
 }
 
-/* ===== Input 區（手機：fixed） ===== */
+/* ===== Input 區 ===== */
 .input-section {
-  position: fixed;
-  bottom: 60px;
-  left: 0;
-  right: 0;
+  flex-shrink: 0;
+  position: relative;
+  bottom: auto;
+  left: auto;
+  right: auto;
   padding: 8px 24px;
+  padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
   background: transparent;
   z-index: 50;
 }
