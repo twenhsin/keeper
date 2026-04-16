@@ -1,7 +1,7 @@
 # CLAUDE.md
 > Keeper 專案入口文件
 > 每次開啟專案時優先讀取此文件
-> 最後更新：2026-04-13
+> 最後更新：2026-04-16
 
 ---
 
@@ -9,7 +9,7 @@
 
 **產品名稱：** Keeper
 **定位：** 個人 AI 行為督導工具
-**完整規格：** `生活督導App_規格書_v5.md`
+**完整規格：** `生活督導App_規格書_v6.md`
 
 ---
 
@@ -17,10 +17,10 @@
 
 | 元件 | 技術 | 版本 |
 |------|------|------|
-| 前端框架 | Nuxt 3 + Vue 3 | latest |
+| 前端框架 | Nuxt 4.4.2 + Vue 3 | - |
 | 樣式 | Tailwind CSS | latest |
 | 資料庫 | Supabase | - |
-| AI 模型 | Claude API（用戶自帶 Key）| claude-sonnet-4-6 |
+| AI 模型 | Claude API（用戶自帶 Key）| claude-sonnet-4-20250514 |
 | 部署 | Vercel | - |
 | 通知排程 | Vercel Cron + Web Push API | - |
 | 裝置支援 | PWA | - |
@@ -34,45 +34,51 @@
 ```
 keeper/
 ├── CLAUDE.md                    — 本文件，專案入口
-├── 生活督導App_規格書_v4.md      — 完整產品規格
+├── 生活督導App_規格書_v6.md      — 完整產品規格
 ├── Skills/
 │   ├── dev/                     — 開發工具 Skills
-│   │   ├── design-system.md     — 視覺規則基礎
-│   │   ├── design-tokens.md     — Token 生成規則
-│   │   ├── ui-codegen.md        — 截圖→頁面生成規則
-│   │   ├── component-gen.md     — 元件抽取與生成規則
-│   │   └── ui-kit.md            — UI Kit 頁面生成規則
+│   │   ├── design-system.md
+│   │   ├── design-tokens.md
+│   │   ├── ui-codegen.md
+│   │   ├── component-gen.md
+│   │   └── ui-kit.md
 │   └── product/                 — 產品邏輯 Skills
-│       ├── supervisor-persona.md — 督導 AI 語氣與行為規則
+│       ├── supervisor-persona.md — 督導 AI 語氣與行為規則（含任務建立協商規則）
 │       ├── api-prompt-builder.md — System Prompt 組裝邏輯
-│       ├── task-card-logic.md   — 確認卡片出現與補發邏輯
-│       └── notification-schedule.md — 推播通知技術架構
-├── pages/
-│   ├── index.vue                — Home（對話介面）
-│   ├── plans.vue                — Plans（計畫管理）
-│   ├── records.vue              — Records（打卡記錄）
-│   ├── records-detail-[id].vue  — Records Detail
-│   ├── setting.vue              — Setting
-│   ├── login.vue                — 登入頁
-│   └── ui-kit.vue               — UI Kit 展示頁
-├── components/
-│   ├── BottomNav.vue
-│   ├── PageHeader.vue
-│   ├── AppButton.vue
-│   ├── BaseCard.vue
-│   ├── TaskCard.vue
-│   ├── PlanCard.vue
-│   ├── ProgressCard.vue
-│   ├── FileCard.vue
-│   └── ChatBubble.vue
-├── assets/
-│   └── css/
-│       ├── tokens.css           — CSS custom properties
-│       └── main.css             — 全域樣式
-├── composables/
+│       ├── task-card-logic.md
+│       └── notification-schedule.md
+├── app/
+│   ├── app.vue
+│   ├── assets/css/
+│   │   ├── tokens.css           — 169 個 CSS custom properties
+│   │   └── main.css             — 全域樣式（含 input font-size: 16px）
+│   ├── components/
+│   │   ├── BottomNav.vue
+│   │   ├── PageHeader.vue
+│   │   ├── AppButton.vue
+│   │   ├── BaseCard.vue
+│   │   ├── ChatBubble.vue
+│   │   ├── TaskCard.vue
+│   │   ├── PlanCard.vue
+│   │   ├── ProgressCard.vue
+│   │   └── FileCard.vue
+│   ├── layouts/
+│   │   └── default.vue          — 背景圖響應式 + viewport useHead 設定
+│   └── pages/
+│       ├── index.vue            — Home ✅（Claude API 對話接入完成）
+│       ├── plans.vue            — Plans ✅（Supabase 串接完成）
+│       ├── records.vue          — Records ✅（Supabase 串接完成）
+│       ├── records-detail-[id].vue
+│       ├── setting.vue          — Setting ✅（API Key 寫入 Supabase）
+│       ├── login.vue
+│       └── ui-kit.vue           — 待完成
 ├── server/
 │   └── api/
+│       ├── chat.post.ts         — Claude API 對話 server route ✅
+│       └── verify-key.post.ts   — API Key 驗證 + 寫入 Supabase ✅
 └── public/
+    └── images/
+        └── page-bg-m.png        — 手機版背景圖
 ```
 
 ---
@@ -103,6 +109,7 @@ keeper/
 - 禁止直接寫色碼（#HEXCODE）於元件內
 - 禁止直接寫 px 字級，統一用 rem
 - 字型：Noto Serif TC（全站統一）
+- input / textarea 的 font-size 必須 16px（防 iOS 縮放）
 
 ### 元件規則
 
@@ -123,10 +130,10 @@ keeper/
 
 ```
 SUPABASE_URL=
-SUPABASE_KEY=
-ANTHROPIC_API_KEY=     # 平台層使用（非用戶 Key）
-VAPID_PUBLIC_KEY=      # Web Push
-VAPID_PRIVATE_KEY=     # Web Push
+SUPABASE_KEY=          # anon key
+SUPABASE_SERVICE_KEY=  # service role key（chat.post.ts 使用）
+VAPID_PUBLIC_KEY=      # Web Push（待實作）
+VAPID_PRIVATE_KEY=     # Web Push（待實作）
 ```
 
 本機：`.env` 檔案
@@ -140,38 +147,49 @@ Vercel：Settings → Environment Variables 手動設定
 2. 視覺待確認項目（無法從截圖判斷的細節）
 3. 尚未處理的項目（若任務範圍內有未完成部分）
 
-## 當前開發進度
-> 最後更新：2026-04-14
+---
+
+## 七、當前開發進度
+> 最後更新：2026-04-16
 
 ### 已完成
-- assets/css/tokens.css（169 tokens，Core/Semantic/Component 三層）
-- assets/css/main.css
-- app/app.vue
-- layouts/default.vue（背景圖響應式）
-- components/BottomNav.vue
-- components/PageHeader.vue（含 Tab slot，fixed 結構）
-- components/AppButton.vue
-- components/BaseCard.vue
-- components/ChatBubble.vue
-- components/TaskCard.vue
-- components/PlanCard.vue
-- components/ProgressCard.vue
-- components/FileCard.vue（含 deletable prop）
-- pages/index.vue（Home，對話區 + textarea 輸入框 + 箭頭 Send 按鈕）
-- pages/plans.vue（Plans 三 tab，Backlog 底部輸入框）
-- pages/records.vue（打卡卡片 + Progress report，桌機三欄）
-- pages/records-detail-[id].vue（習慣任務折線圖 + 長期任務 Phase 清單）
-- pages/setting.vue（API Key 驗證 + About Me + Project 文件上傳）
-- pages/login.vue（Email + 密碼登入）
-- server/api/verify-key.post.ts（API Key server 端驗證）
-- Supabase 資料表建立（users、habits、plans、backlog、task_cards、conversation_summaries、project_files、notification_logs）
-- Supabase Auth 登入設定
-- 全站三區塊固定佈局（PageHeader fixed + content fixed + BottomNav fixed）
+- assets/css/tokens.css（169 tokens）
+- assets/css/main.css（含全域 input font-size: 16px）
+- layouts/default.vue（背景圖響應式、viewport useHead、position: fixed inset: 0）
+- 全站元件：BottomNav、PageHeader、AppButton、BaseCard、ChatBubble、TaskCard、PlanCard、ProgressCard、FileCard
+- pages/index.vue（Home）：
+  - Claude API 對話接入（reminder / chat 模式）
+  - 任務建立 JSON 偵測 → 自動寫入 Supabase habits / plans
+  - 當天對話記錄跨裝置保留（today_messages + messages_date）
+  - 督促提醒模式（開啟 App 自動生成）
+  - 點擊輸入框切換對話模式
+  - 暫停對話功能（AbortController）
+  - 提醒文字換行（white-space: pre-line）
+- pages/plans.vue：Supabase 串接（habits + plans 讀取、刪除、Toggle）
+- pages/records.vue：Supabase 串接（打卡卡片動態生成、card_mode daily/scheduled、Progress Report）
+- pages/setting.vue：API Key 驗證 + 寫入 Supabase users.api_key
+- server/api/chat.post.ts：System Prompt 組裝、三種模式、台灣時區、任務建立日期判斷
+- server/api/verify-key.post.ts：驗證 + upsert users 表
+- Supabase 資料表：users（含 api_key、today_messages、messages_date、card_mode）、habits、plans、backlog、task_cards、conversation_summaries、project_files、notification_logs
+- Supabase Auth 登入 + session 持久化（nuxt.config.ts redirectOptions）
+- Vercel 部署完成：keeper-eight-inky.vercel.app
 
 ### 待完成
-- pages/ui-kit.vue
-- Claude API 接入（Home 對話功能）
-- Plans / Records 資料串接 Supabase
-- PWA 設定
-- Vercel Cron 推播通知
-- Vercel 部署
+- [ ] pages/ui-kit.vue
+- [ ] PWA 設定
+- [ ] Vercel Cron 推播通知
+- [ ] 對話摘要寫回 conversation_summaries（每日 Cron）
+- [ ] weekly_summaries 資料表 + 每週摘要 Cron
+- [ ] 手機版 iOS Safari 鍵盤收起後底部白色空白問題
+
+### 待辦清單（功能擴充）
+- [ ] 對話暫停後 AI 回應顯示被截斷的處理
+- [ ] Plans 第一次建立有時不顯示的問題（確認是否穩定復現）
+- [ ] 滾動式記憶架構（v1.1）：每日摘要 → 週摘要 → 月摘要 → 累積摘要
+  - 每日對話 → 7天每日摘要
+  - 7天摘要 → 週摘要（保留4週）
+  - 4週摘要 → 月摘要（保留3個月）
+  - 3個月摘要 → 歷史總摘要（滾動壓縮）
+- [ ] Backlog tab 串接 Supabase
+- [ ] AI 回饋文字（缺席補發後）
+- [ ] 計畫視覺圖

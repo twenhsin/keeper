@@ -21,10 +21,25 @@
         <circle cx="12" cy="7" r="4" stroke="url(#user-icon-gradient)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </button>
+
+    <!-- 登出確認彈窗 -->
+    <Teleport to="body">
+      <div v-if="showLogoutModal" class="modal-overlay" @click="closeModal">
+        <div class="modal-box" @click.stop>
+          <p class="modal-title">Logout</p>
+          <AppButton label="Log out" @click="handleLogout" />
+        </div>
+      </div>
+
+      <!-- Toast -->
+      <div v-if="showToast" class="logout-toast">登出成功</div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
+import { ref } from 'vue'
+
 const supabase = useSupabaseClient()
 const user = useSupabaseUser()
 
@@ -34,13 +49,27 @@ useHead({
   ]
 })
 
-async function handleUserIcon() {
+const showLogoutModal = ref(false)
+const showToast = ref(false)
+
+function handleUserIcon() {
   if (user.value) {
-    await supabase.auth.signOut()
-    navigateTo('/login')
+    showLogoutModal.value = true
   } else {
     navigateTo('/login')
   }
+}
+
+async function handleLogout() {
+  await supabase.auth.signOut()
+  showLogoutModal.value = false
+  showToast.value = true
+  setTimeout(() => { showToast.value = false }, 2000)
+  setTimeout(() => { navigateTo('/login') }, 2200)
+}
+
+function closeModal() {
+  showLogoutModal.value = false
 }
 </script>
 
@@ -122,5 +151,47 @@ body {
     linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
+}
+
+/* ===== 登出彈窗 ===== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-box {
+  background: rgba(255, 255, 255, 1.0);
+  border-radius: 20px;
+  padding: 24px;
+  max-width: 280px;
+  width: 100%;
+}
+
+.modal-title {
+  font-size: var(--typography-heading-size);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 24px;
+  text-align: center;
+}
+
+/* ===== Toast ===== */
+.logout-toast {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 300;
+  background: var(--gradient-brand);
+  color: white;
+  border-radius: 12px;
+  padding: 10px 20px;
+  font-size: var(--typography-caption-size);
+  white-space: nowrap;
 }
 </style>
