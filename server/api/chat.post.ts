@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
 
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
 
-  const [userRes, habitsRes, plansRes, taskCardsRes, summariesRes] = await Promise.all([
+  const [userRes, habitsRes, plansRes, taskCardsRes, summariesRes, refBooksRes] = await Promise.all([
     supabase
       .from('users')
       .select('personal_summary, supervisor_style')
@@ -48,7 +48,11 @@ export default defineEventHandler(async (event) => {
       .select('summary, created_at')
       .eq('user_id', userId)
       .gte('created_at', sevenDaysAgo)
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('reference_books')
+      .select('title')
+      .eq('user_id', userId)
   ])
 
   // ===== 組裝 System Prompt =====
@@ -57,6 +61,7 @@ export default defineEventHandler(async (event) => {
   const plans = plansRes.data ?? []
   const taskCards = taskCardsRes.data ?? []
   const summaries = summariesRes.data ?? []
+  const refBooks = refBooksRes.data ?? []
 
   const habitsBlock = habits.length > 0
     ? habits.map(h => {
@@ -134,7 +139,11 @@ export default defineEventHandler(async (event) => {
 ## 關於用戶
 ${user?.personal_summary ?? '（尚未設定個人資料）'}
 
-## 當前啟用中的習慣任務
+${refBooks.length > 0 ? `## 參考書籍概念
+用戶希望你在互動中適時引用以下書籍的核心概念，根據用戶當前狀況自然帶入，不需要每次都引用，判斷何時相關再使用：
+${refBooks.map(b => `- ${b.title}`).join('\n')}
+
+` : ''}## 當前啟用中的習慣任務
 ${habitsBlock}
 
 ## 當前啟用中的長期任務
@@ -144,6 +153,10 @@ ${(notes && notes.length > 0) ? `---
 【生活觀察紀錄】
 以下是用戶記錄的生活狀態觀察，請根據當前時間與對話情境，在適當時機自然帶入提醒，不需要每次都提，判斷何時相關再提：
 ${notes.map(n => `- ${n.content}`).join('\n')}
+
+以上是用戶的生活觀察筆記（Notes）。這些不是正式任務，是用戶希望逐漸改善的生活狀態。
+針對 Notes 的提醒風格應柔性為主：提供建議、心理開導、鼓勵分析，偶爾在用戶持續未改善時稍微數落，
+並說明原因與重要性。不需要像習慣任務一樣嚴格要求執行。
 ---
 
 ` : ''}## 近期執行狀態（最近七天）

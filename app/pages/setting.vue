@@ -35,7 +35,6 @@
         <h2 class="section-title">About Me</h2>
         <div class="about-wrapper">
           <textarea
-            ref="aboutTextareaEl"
             v-model="aboutMe"
             class="about-textarea"
             placeholder="描述你自己，讓 AI 更了解你的習慣與目標…"
@@ -54,7 +53,34 @@
         </div>
       </div>
 
-      <!-- 區塊三：Project -->
+      <!-- 區塊三：Reference Books -->
+      <div class="section">
+        <h2 class="section-title">Reference Books</h2>
+        <div class="ref-book-list">
+          <div v-for="(book, index) in refBooks" :key="index" class="ref-book-row">
+            <input
+              v-model="book.title"
+              type="text"
+              class="ref-book-input"
+              :disabled="book.saved"
+              placeholder="輸入你想引用的書籍概念"
+              @keydown="(e) => handleRefBookEnter(e, index)"
+            />
+            <button
+              class="ref-book-btn"
+              type="button"
+              :disabled="!book.saved && !book.title.trim()"
+              :class="{ 'ref-book-btn--disabled': !book.saved && !book.title.trim() }"
+              @click="book.saved ? deleteRefBook(index) : saveRefBook(index)"
+            >
+              <Trash2 v-if="book.saved" :size="18" :stroke-width="2" color="white" />
+              <Save v-else :size="18" :stroke-width="2" color="white" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 區塊四：Project -->
       <div class="section">
         <div class="section-header">
           <h2 class="section-title">Project</h2>
@@ -91,8 +117,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue'
-import { Save, Check } from 'lucide-vue-next'
+import { ref, onMounted } from 'vue'
+import { Save, Check, Trash2 } from 'lucide-vue-next'
 
 definePageMeta({ middleware: 'setting' })
 
@@ -145,19 +171,10 @@ async function saveApiKey() {
 
 // ===== About Me =====
 const aboutMe = ref('')
-const aboutTextareaEl = ref(null)
 // 'disabled'（無文字）| 'save'（可儲存）| 'saved'（已儲存）
 const aboutSaveState = ref('disabled')
 
-function resizeAboutTextarea() {
-  const el = aboutTextareaEl.value
-  if (!el) return
-  el.style.height = 'auto'
-  el.style.height = Math.max(180, el.scrollHeight) + 'px'
-}
-
 function handleAboutInput() {
-  resizeAboutTextarea()
   aboutSaveState.value = aboutMe.value.trim() ? 'save' : 'disabled'
 }
 
@@ -173,6 +190,72 @@ async function saveAboutMe() {
     aboutSaveState.value = 'saved'
     showToast('已儲存')
   }
+}
+
+// ===== Reference Books =====
+const refBooks = ref([])
+
+async function fetchRefBooks() {
+  const { data: { user: currentUser } } = await supabase.auth.getUser()
+  const userId = currentUser?.id
+  if (!userId) return
+
+  const { data } = await supabase
+    .from('reference_books')
+    .select('id, title')
+    .eq('user_id', userId)
+    .order('created_at')
+
+  refBooks.value = (data ?? []).map(r => ({ id: r.id, title: r.title, saved: true }))
+  refBooks.value.push({ id: null, title: '', saved: false })
+}
+
+async function saveRefBook(index) {
+  const item = refBooks.value[index]
+  const title = item.title.trim()
+  if (!title) return
+
+  const { data: { user: currentUser } } = await supabase.auth.getUser()
+  const userId = currentUser?.id
+  if (!userId) return
+
+  const { data, error } = await supabase
+    .from('reference_books')
+    .insert({ user_id: userId, title })
+    .select('id')
+    .single()
+
+  if (error) {
+    showToast('儲存失敗，請再試一次')
+    return
+  }
+
+  refBooks.value[index] = { id: data.id, title, saved: true }
+  refBooks.value.push({ id: null, title: '', saved: false })
+}
+
+function handleRefBookEnter(e, index) {
+  if (e.key !== 'Enter') return
+  if (e.shiftKey || e.metaKey || e.ctrlKey) return
+  e.preventDefault()
+  saveRefBook(index)
+}
+
+async function deleteRefBook(index) {
+  const item = refBooks.value[index]
+  if (!item.id) return
+
+  const { error } = await supabase
+    .from('reference_books')
+    .delete()
+    .eq('id', item.id)
+
+  if (error) {
+    showToast('刪除失敗，請再試一次')
+    return
+  }
+
+  refBooks.value.splice(index, 1)
 }
 
 // ===== Project Files =====
@@ -280,11 +363,10 @@ onMounted(async () => {
   if (userData?.personal_summary) {
     aboutMe.value = userData.personal_summary
     aboutSaveState.value = 'save'
-    await nextTick()
-    resizeAboutTextarea()
   }
 
   await fetchProjectFiles()
+  await fetchRefBooks()
 })
 </script>
 
@@ -412,7 +494,8 @@ onMounted(async () => {
 .about-textarea {
   display: block;
   width: 100%;
-  min-height: 180px;
+  height: 200px;
+  max-height: 500px;
   background: var(--card-bg);
   border: 1px solid var(--card-border);
   border-radius: var(--card-radius);    /* 20px */
@@ -425,7 +508,7 @@ onMounted(async () => {
   color: var(--text-primary);
   resize: none;
   outline: none;
-  overflow-y: hidden;
+  overflow-y: auto;
   box-sizing: border-box;
 }
 
@@ -451,6 +534,65 @@ onMounted(async () => {
 }
 
 .save-btn--disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ===== Reference Books ===== */
+.ref-book-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-gap-card); /* 12px */
+}
+
+.ref-book-row {
+  display: flex;
+  align-items: center;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--core-radius-300); /* 12px */
+  padding: var(--core-spacing-200); /* 8px */
+  gap: var(--core-spacing-200); /* 8px */
+}
+
+.ref-book-input {
+  flex: 1;
+  height: 36px;
+  background: transparent;
+  border: none;
+  padding: 0 var(--core-spacing-200);
+  font-family: inherit;
+  font-size: var(--typography-body-size);
+  color: var(--text-primary);
+  outline: none;
+  min-width: 0;
+}
+
+.ref-book-input::placeholder {
+  color: var(--text-placeholder);
+}
+
+.ref-book-input:disabled {
+  cursor: default;
+  opacity: 1;
+  -webkit-text-fill-color: var(--text-primary);
+}
+
+.ref-book-btn {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  background: var(--gradient-brand);
+  border: none;
+  border-radius: var(--core-radius-300); /* 12px */
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s ease;
+}
+
+.ref-book-btn--disabled {
   opacity: 0.5;
   cursor: default;
 }

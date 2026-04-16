@@ -40,6 +40,7 @@
             placeholder="Reply"
             @input="resizeTextarea"
             @focus="enterChatMode"
+            @keydown="handleInputKeyDown"
           />
           <div class="input-actions">
             <button v-if="!isLoadingChat" class="send-btn" type="button" aria-label="Send" @click="sendMessage">
@@ -279,6 +280,13 @@ function resizeTextarea() {
   // 強制 reflow 後再讀 scrollHeight，確保空值時高度正確收縮
   void el.offsetHeight
   el.style.height = Math.max(MIN_HEIGHT, el.scrollHeight) + 'px'
+}
+
+function handleInputKeyDown(e) {
+  if (e.key !== 'Enter') return
+  if (e.shiftKey || e.metaKey || e.ctrlKey) return
+  e.preventDefault()
+  sendMessage()
 }
 
 function scrollToBottom() {

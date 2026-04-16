@@ -112,7 +112,7 @@
             v-model="newNote"
             class="input-textarea"
             placeholder="Add a note..."
-            @keydown.enter.exact.prevent="addNote"
+            @keydown.enter="handleNoteEnter"
             @input="resizeNotesTextarea"
           />
           <div class="input-actions">
@@ -262,6 +262,12 @@ async function deleteNote(id) {
   }
   const idx = notes.value.findIndex(n => n.id === id)
   if (idx !== -1) notes.value.splice(idx, 1)
+}
+
+function handleNoteEnter(e) {
+  if (e.shiftKey || e.metaKey || e.ctrlKey) return
+  e.preventDefault()
+  addNote()
 }
 
 function resizeNotesTextarea() {
