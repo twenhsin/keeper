@@ -45,7 +45,13 @@ const user = useSupabaseUser()
 
 useHead({
   meta: [
-    { name: 'viewport', content: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, interactive-widget=resizes-content' }
+    { name: 'viewport', content: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, interactive-widget=resizes-content' },
+    { name: 'apple-mobile-web-app-capable', content: 'yes' },
+    { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
+    { name: 'apple-mobile-web-app-title', content: 'Keeper' }
+  ],
+  link: [
+    { rel: 'apple-touch-icon', href: '/icons/icon-192.png' }
   ]
 })
 
