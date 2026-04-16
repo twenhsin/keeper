@@ -2,11 +2,12 @@ import { createClient } from '@supabase/supabase-js'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
-  const { mode, messages, userId, apiKey } = body as {
+  const { mode, messages, userId, apiKey, notes } = body as {
     mode: 'reminder' | 'chat' | 'task_creation'
     messages: { role: 'user' | 'assistant'; content: string }[]
     userId: string
     apiKey: string
+    notes?: { id: string; content: string }[]
   }
 
   if (!mode || !userId || !apiKey) {
@@ -86,7 +87,7 @@ export default defineEventHandler(async (event) => {
     : '（近七天無對話摘要）'
 
   const modeInstruction: Record<string, string> = {
-    reminder: '請根據以上資料生成用戶當前應看到的督促提醒。每個任務各一條，換行分隔，不超過兩句話，語氣對應缺席層級。此提醒不計入對話記錄。',
+    reminder: '請根據以上所有資料（包含習慣任務、長期任務、生活觀察紀錄）生成用戶當前應看到的督促提醒。\n根據當前時間判斷最相關的提醒內容，不需要每項都提，選擇此刻最重要的 1-2 件事。\n若有生活觀察紀錄，請在適當時間點納入提醒（例如：早上提醒早餐、晚上提醒睡眠）。\n語氣直接、不廢話。此提醒不計入對話記錄。',
     chat: `現在進入對話模式，根據用戶輸入給予督導回應。
 
 當對話中涉及建立新習慣或長期任務，且以下資訊已經確認完整時，在回應末尾輸出 JSON：
@@ -139,7 +140,13 @@ ${habitsBlock}
 ## 當前啟用中的長期任務
 ${plansBlock}
 
-## 近期執行狀態（最近七天）
+${(notes && notes.length > 0) ? `---
+【生活觀察紀錄】
+以下是用戶記錄的生活狀態觀察，請根據當前時間與對話情境，在適當時機自然帶入提醒，不需要每次都提，判斷何時相關再提：
+${notes.map(n => `- ${n.content}`).join('\n')}
+---
+
+` : ''}## 近期執行狀態（最近七天）
 注意：若任務建立日期與當前日期相近（7天以內），表示任務剛建立，不應視為缺席。請根據建立日期與通知時間判斷是否真正缺席，而非單純看打卡記錄空白。
 ${taskCardsBlock}
 

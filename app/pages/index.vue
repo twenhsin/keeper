@@ -76,6 +76,8 @@ const isLoadingChat = ref(false)
 const isChatMode = ref(false)
 const toastText = ref('')
 
+const userNotes = ref([])
+
 const inputText = ref('')
 const mainContentEl = ref(null)
 const textareaEl = ref(null)
@@ -123,11 +125,18 @@ onMounted(async () => {
     await supabase.from('users').update({ today_messages: [], messages_date: today }).eq('id', user.id)
   }
 
+  // ===== 讀取 Notes =====
+  const { data: notesData } = await supabase
+    .from('notes')
+    .select('id, content')
+    .eq('user_id', user.id)
+  userNotes.value = notesData ?? []
+
   // ===== 拉督促提醒 =====
   try {
     const res = await $fetch('/api/chat', {
       method: 'POST',
-      body: { mode: 'reminder', messages: [], userId: userId.value, apiKey: apiKey.value }
+      body: { mode: 'reminder', messages: [], userId: userId.value, apiKey: apiKey.value, notes: userNotes.value }
     })
     reminderText.value = res.content
   } catch (err) {
@@ -166,7 +175,8 @@ async function sendMessage() {
         mode: 'chat',
         messages: messages.value.map(m => ({ role: m.role, content: m.content })),
         userId: userId.value,
-        apiKey: apiKey.value
+        apiKey: apiKey.value,
+        notes: userNotes.value
       })
     })
 
@@ -295,7 +305,7 @@ function scrollToBottom() {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  padding: 24px;
+  padding: 48px 24px 24px;
 }
 
 /* ===== 對話內容區 ===== */

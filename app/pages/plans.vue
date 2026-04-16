@@ -31,7 +31,7 @@
         <p v-if="loading" class="empty-hint">載入中...</p>
 
         <!-- Habits / Long-term：PlanCard + Toggle -->
-        <template v-else-if="activeTab !== 'backlog'">
+        <template v-else-if="activeTab === 'habits' || activeTab === 'longterm'">
           <PlanCard
             v-for="plan in currentPlans"
             :key="plan.id"
@@ -43,12 +43,13 @@
             @open-detail="selectedPlan = plan"
             @delete="deleteRemotePlan"
           />
+          <p v-if="currentPlans.length === 0" class="empty-hint">尚無計畫</p>
         </template>
 
         <!-- Backlog：純標題 + 刪除 × -->
-        <template v-else>
+        <template v-else-if="activeTab === 'backlog'">
           <BaseCard
-            v-for="item in currentPlans"
+            v-for="item in plansData.backlog"
             :key="item.id"
             padding="sm"
             :opacity="80"
@@ -59,9 +60,27 @@
               <button class="delete-btn" type="button" @click="deleteBacklog(item.id)">×</button>
             </div>
           </BaseCard>
+          <p v-if="plansData.backlog.length === 0" class="empty-hint">尚無計畫</p>
         </template>
 
-        <p v-if="!loading && currentPlans.length === 0" class="empty-hint">尚無計畫</p>
+        <!-- Notes：內容 + 垃圾桶 -->
+        <template v-else-if="activeTab === 'notes'">
+          <BaseCard
+            v-for="note in notes"
+            :key="note.id"
+            padding="sm"
+            :opacity="80"
+            class="backlog-card"
+          >
+            <div class="backlog-row">
+              <span class="note-text">{{ note.content }}</span>
+              <button class="trash-btn" type="button" @click="deleteNote(note.id)">
+                <Trash2 :size="16" />
+              </button>
+            </div>
+          </BaseCard>
+          <p v-if="notes.length === 0" class="empty-hint">還沒有任何 notes</p>
+        </template>
       </div>
     </div>
 
@@ -79,6 +98,25 @@
           />
           <div class="input-actions">
             <AppButton label="Send" size="compact" @click="addToBacklog" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notes 輸入框 -->
+    <div v-if="activeTab === 'notes'" class="backlog-input-section">
+      <div class="input-outer">
+        <div class="input-inner">
+          <textarea
+            ref="notesTextareaEl"
+            v-model="newNote"
+            class="input-textarea"
+            placeholder="Add a note..."
+            @keydown.enter.exact.prevent="addNote"
+            @input="resizeNotesTextarea"
+          />
+          <div class="input-actions">
+            <AppButton label="Send" size="compact" @click="addNote" />
           </div>
         </div>
       </div>
@@ -108,12 +146,15 @@
 
 <script setup>
 import { ref, reactive, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import { Trash2 } from 'lucide-vue-next'
+
 const supabase = useSupabaseClient()
 
 const tabs = [
   { key: 'habits',   label: 'Habits' },
   { key: 'longterm', label: 'Long-term' },
-  { key: 'backlog',  label: 'Backlog' }
+  { key: 'backlog',  label: 'Backlog' },
+  { key: 'notes',    label: 'Notes' }
 ]
 
 const activeTab = ref('habits')
@@ -138,10 +179,12 @@ onMounted(async () => {
     loading.value = false
     return
   }
+  currentUserId = user.id
 
-  const [habitsRes, longtermRes] = await Promise.all([
+  const [habitsRes, longtermRes, notesRes] = await Promise.all([
     supabase.from('habits').select('id, title, description, is_active, card_mode').eq('user_id', user.id).order('created_at', { ascending: true }),
-    supabase.from('plans').select('id, title, description, is_active').eq('user_id', user.id).order('created_at', { ascending: true })
+    supabase.from('plans').select('id, title, description, is_active').eq('user_id', user.id).order('created_at', { ascending: true }),
+    supabase.from('notes').select('id, content').eq('user_id', user.id).order('created_at', { ascending: true })
   ])
 
   if (habitsRes.data) {
@@ -149,6 +192,9 @@ onMounted(async () => {
   }
   if (longtermRes.data) {
     plansData.longterm = longtermRes.data.map(r => ({ id: r.id, title: r.title, description: r.description ?? '', isActive: r.is_active }))
+  }
+  if (notesRes.data) {
+    notes.value = notesRes.data
   }
 
   loading.value = false
@@ -172,6 +218,54 @@ function addToBacklog() {
 
 function resizeBacklogTextarea() {
   const el = backlogTextareaEl.value
+  if (!el) return
+  el.style.height = 'auto'
+  el.style.height = Math.max(44, el.scrollHeight) + 'px'
+}
+
+/* ===== Notes ===== */
+const notes = ref([])
+const newNote = ref('')
+const notesTextareaEl = ref(null)
+let currentUserId = null
+
+async function addNote() {
+  const content = newNote.value.trim()
+  if (!content) return
+
+  if (!currentUserId) {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    currentUserId = user.id
+  }
+
+  const { data, error } = await supabase
+    .from('notes')
+    .insert({ user_id: currentUserId, content })
+    .select('id, content')
+    .single()
+
+  if (error) {
+    showToastMsg('新增失敗，請再試一次')
+    return
+  }
+  notes.value.push(data)
+  newNote.value = ''
+  nextTick(() => resizeNotesTextarea())
+}
+
+async function deleteNote(id) {
+  const { error } = await supabase.from('notes').delete().eq('id', id)
+  if (error) {
+    showToastMsg('刪除失敗，請再試一次')
+    return
+  }
+  const idx = notes.value.findIndex(n => n.id === id)
+  if (idx !== -1) notes.value.splice(idx, 1)
+}
+
+function resizeNotesTextarea() {
+  const el = notesTextareaEl.value
   if (!el) return
   el.style.height = 'auto'
   el.style.height = Math.max(44, el.scrollHeight) + 'px'
@@ -236,7 +330,7 @@ onBeforeUnmount(() => clearTimeout(toastTimer))
   top: 160px（header 128px + gap 32px）
     128px = padding-top 40px + h1 38px + gap 16px + tab 34px
   bottom: 90px（BottomNav top 58px + gap 32px）
-  padding-bottom: 140px（為 backlog 輸入框預留空間）
+  padding-bottom: 140px（為 backlog/notes 輸入框預留空間）
 */
 .main-content {
   position: fixed;
@@ -277,7 +371,8 @@ onBeforeUnmount(() => clearTimeout(toastTimer))
   margin: var(--spacing-gap-section) 0 0;
 }
 
-/* ===== Backlog 卡片 ===== */
+
+/* ===== Backlog / Notes 卡片 ===== */
 .backlog-card {
   cursor: default;
 }
@@ -296,12 +391,29 @@ onBeforeUnmount(() => clearTimeout(toastTimer))
   color: var(--text-primary);
 }
 
+.note-text {
+  font-size: var(--typography-body-size);
+  color: var(--text-primary);
+  line-height: var(--typography-body-line-height);
+}
+
 .delete-btn {
   background: none;
   border: none;
   padding: 0;
   font-size: 2rem;
   line-height: 1;
+  color: var(--text-danger);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.trash-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
   color: var(--text-danger);
   cursor: pointer;
   flex-shrink: 0;
@@ -360,7 +472,7 @@ onBeforeUnmount(() => clearTimeout(toastTimer))
   white-space: pre-line;
 }
 
-/* ===== Backlog 輸入框 ===== */
+/* ===== Backlog / Notes 輸入框 ===== */
 /* bottom: 74px（BottomNav top 58px + gap 16px） */
 .backlog-input-section {
   position: fixed;
