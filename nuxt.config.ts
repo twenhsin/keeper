@@ -31,6 +31,9 @@ export default defineNuxtConfig({
     },
     workbox: {
       navigateFallback: '/'
+    },
+    client: {
+      installPrompt: false
     }
   },
   supabase: {
