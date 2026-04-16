@@ -53,6 +53,8 @@ body {
 .layout {
   position: relative;
   min-height: 100dvh;
+  height: 100dvh;
+  overflow: hidden;
 }
 
 /* 背景圖層：position: fixed 確保 iOS Safari 正確渲染 */
@@ -76,6 +78,8 @@ body {
 .layout-content {
   position: relative;
   z-index: 1;
+  height: 100%;
+  overflow: hidden;
 }
 
 /* ===== 使用者 icon 按鈕 ===== */
