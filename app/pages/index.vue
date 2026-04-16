@@ -83,10 +83,6 @@ const MIN_HEIGHT = 44
 let toastTimer = null
 const abortController = ref(null)
 
-// iOS Safari 鍵盤收起後強制修正高度
-function onFocusOut() {
-  setTimeout(() => { window.scrollTo(0, 0) }, 100)
-}
 
 const today = new Date().toLocaleDateString('zh-TW', {
   timeZone: 'Asia/Taipei',
@@ -97,8 +93,6 @@ const today = new Date().toLocaleDateString('zh-TW', {
 
 /* ===== onMounted：取得用戶資料 → 還原對話 → 拉提醒 ===== */
 onMounted(async () => {
-  window.addEventListener('focusout', onFocusOut)
-
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     reminderText.value = '請先登入以使用 Keeper'
@@ -147,10 +141,7 @@ onMounted(async () => {
   }
 })
 
-onBeforeUnmount(() => {
-  clearTimeout(toastTimer)
-  window.removeEventListener('focusout', onFocusOut)
-})
+onBeforeUnmount(() => clearTimeout(toastTimer))
 
 /* ===== 送出訊息 ===== */
 async function sendMessage() {

@@ -28,6 +28,12 @@
 const supabase = useSupabaseClient()
 const user = useSupabaseUser()
 
+useHead({
+  meta: [
+    { name: 'viewport', content: 'width=device-width, initial-scale=1, interactive-widget=resizes-content' }
+  ]
+})
+
 async function handleUserIcon() {
   if (user.value) {
     await supabase.auth.signOut()
