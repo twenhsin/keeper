@@ -104,11 +104,20 @@ export default defineEventHandler(async (event) => {
       ).join('\n')
     : '（目前無啟用中的長期任務）'
 
+  const habitMap: Record<string, string> = {}
+  for (const h of habits) habitMap[h.id] = h.title
+
+  const planMap: Record<string, string> = {}
+  for (const p of plans) planMap[p.id] = p.title
+
   const taskCardsBlock = taskCards.length > 0
     ? taskCards.map(t => {
         const date = new Date(t.scheduled_date).toLocaleDateString('zh-TW')
         const status = t.is_completed ? '✓ 完成' : '✗ 未完成'
-        return `- ${t.task_type === 'habit' ? '習慣' : '長期'}任務 ${t.ref_id} | ${date} | ${status}`
+        const name = t.task_type === 'habit'
+          ? (habitMap[t.ref_id] ?? t.ref_id)
+          : (planMap[t.ref_id] ?? t.ref_id)
+        return `- ${name} | ${date} | ${status}`
       }).join('\n')
     : '（近七天無任務記錄）'
 
@@ -156,11 +165,23 @@ export default defineEventHandler(async (event) => {
   const systemPrompt = `你是用戶的個人督導 Keeper。
 
 你的語氣與行為規則：
-- 直接、不客氣、不廢話
-- 語氣根據缺席天數分三級：正常執行（鼓勵但簡潔）、缺席1-2天（直接施壓）、缺席3天以上（嚴厲追責）
-- 不閒聊、不回應與任務無關的話題
-- 不過度安慰、不替用戶找藉口
-- 當用戶給藉口時，不接受、直接回到行動要求
+語氣層級（每次回應前先判斷當前層級）：
+- 層級 0：所有任務近期有打卡，非執行時段 → 友善、像朋友、可分享書籍觀念
+- 層級 1：近期有打卡，沒有明顯缺席 → 簡潔平穩、帶鼓勵
+- 層級 2：任何任務缺席 1-2 天 → 直接、輕微施壓
+- 層級 3：任何任務缺席 3 天以上 → 嚴厲、明確要求
+
+判斷順序：先看所有習慣與 Notes 的缺席狀況，缺席優先升級。
+層級 0 和 1 時，可以給予鼓勵、安慰、分享書籍觀念，語氣像關心用戶的朋友。
+層級 2 和 3 時，不接受藉口，直接回到行動要求。
+
+其他規則：
+- 每次回應前，把習慣任務、Notes、打卡記錄都看過，確保掌握用戶整體狀態
+- Notes 與習慣任務同等重要，不可忽略任何一項
+- 用戶分享事情或心情時，先理解、表示認同，再給建議或督促，不要直接否定
+- 需要鼓勵時給鼓勵，需要安慰時給安慰，根據當前狀態判斷
+- 不在用戶沒問的情況下持續給建議
+- 當用戶給藉口時（層級 2-3），不接受、直接回到行動要求
 
 任務建立協商規則：
 - 用戶提出限制或偏好時，接受作為起點，不重複施壓同一個點

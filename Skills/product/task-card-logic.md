@@ -20,18 +20,27 @@
 
 ### 習慣任務卡片
 
-觸發條件：
-1. 當前時間 >= 該任務的 `notify_time`
-2. 今天是該任務的「應執行日」（根據 `frequency_days` 計算）
-3. 今天尚未有對應的 `task_cards` 記錄
+**固定卡（required_weekdays 有值）**
+- 今天的星期幾在 required_weekdays 內
+- card_show_time 為 null 或當前時間 >= card_show_time
+- 今天尚未有對應的 task_cards 記錄
 
-應執行日計算邏輯：
-```
-上次執行日（最近一筆 is_completed = true 的 confirmed_at）
-+ frequency_days = 下次應執行日
+**加分卡（allow_extra = true）**
+- 今天不在 required_weekdays 內
+- card_show_time 為 null 或當前時間 >= card_show_time
+- 今天尚未有對應的 task_cards 記錄
+- 寫入 task_cards 時 is_extra = true
 
-若從未執行過，以任務建立日（created_at）為基準起算
-```
+**週期卡（period_days 有值）**
+- 距上次完成打卡（confirmed_at）已達 period_days 天
+- 若從未打卡，以 created_at 為基準起算
+- card_show_time 為 null 或當前時間 >= card_show_time
+- 今天尚未有對應的 task_cards 記錄
+
+**補打卡（allow_makeup = true）**
+- 昨天是固定日或週期日，但昨天沒有 is_completed = true 的記錄
+- 補一張，scheduled_date = 昨天
+- 顯示在獨立「待補打卡」區塊
 
 ### 長期任務卡片
 
@@ -44,7 +53,7 @@
 
 ---
 
-## 三、缺席補發邏輯
+## 三、補打卡邏輯
 
 ### 觸發時機
 用戶開啟 App 時執行補發檢查。
@@ -53,10 +62,8 @@
 
 **習慣任務：**
 ```
-從上次開啟 App 的日期到今天
-根據 frequency_days 計算這段期間內應該出現幾張卡片
-比對 task_cards 找出哪些日期缺少記錄
-針對缺少的日期逐一建立補發卡片
+只補昨天一天，不往前推算多天。
+條件：allow_makeup = true，且昨天應出現卡片（固定日或週期日）但未打卡。
 ```
 
 **長期任務：**
@@ -183,7 +190,38 @@ const isLeapYear = (year) =>
 
 ---
 
-## 八、待補內容
+## 八、task_cards 新增欄位
+
+```sql
+ALTER TABLE task_cards
+  ADD COLUMN is_extra boolean DEFAULT false,
+  ADD COLUMN slot_index int DEFAULT 0;
+```
+
+---
+
+**5. habits 退役欄位說明（加在第一節「卡片類型」後面）**
+
+```markdown
+## 一之二、habits 欄位說明（v2）
+
+| 欄位 | 類型 | 說明 |
+|------|------|------|
+| required_weekdays | jsonb | 固定日，0=週日~6=週六，例 [3,0] |
+| period_days | int | 週期卡，每 N 天一次 |
+| allow_extra | boolean | 非固定日是否出現加分卡 |
+| allow_makeup | boolean | 錯過後隔天是否補一張 |
+| daily_slots | int | 每天幾張卡，預設 1 |
+| card_show_time | time | 卡片從幾點顯示，null = 全天 |
+| notify_times | jsonb | 推播時間，例 ["18:30"] |
+
+退役欄位（保留不刪）：card_mode、frequency_days、notify_time
+```
+
+---
+
+
+## 九、待補內容
 
 - [ ] 缺席補發後 AI 一次性回饋的觸發邏輯（v1.1）
 - [ ] 補發上限天數可否由用戶自訂（待確認）
