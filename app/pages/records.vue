@@ -316,6 +316,14 @@ async function checkIn(card) {
   if (!error) {
     checkInCards.value = checkInCards.value.filter(c => c.id !== card.id)
     makeupCards.value = makeupCards.value.filter(c => !(c.id === card.id && c.scheduledDate === card.scheduledDate))
+
+    const target = progressItems.value.find(p => p.id === card.id)
+    if (target) {
+      target.monthDone += 1
+      if (card.scheduledDate === getTodayStr()) {
+        target.weekDone += 1
+      }
+    }
   }
 }
 </script>
