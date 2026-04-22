@@ -243,7 +243,8 @@ ${modeInstruction[mode]}`
         model: 'claude-sonnet-4-20250514',
         max_tokens: 1024,
         system: systemPrompt,
-        messages: apiMessages
+        messages: apiMessages,
+        stream: true
       })
     })
   } catch (err) {
@@ -259,11 +260,13 @@ ${modeInstruction[mode]}`
     throw createError({ statusCode: 500, statusMessage: `Claude API error: ${errBody}` })
   }
 
-  const claudeData = await claudeRes.json() as {
-    content: { type: string; text: string }[]
-  }
+  // 把 Claude 的 SSE stream 直接轉給前端
+  const headers = new Headers({
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'X-Mode': mode
+  })
 
-  const content = claudeData.content.find(c => c.type === 'text')?.text ?? ''
-
-  return { content, mode }
+  return new Response(claudeRes.body, { headers })
 })

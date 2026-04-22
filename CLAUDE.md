@@ -173,13 +173,21 @@ Vercel：Settings → Environment Variables 手動設定
 - Supabase 資料表：users（含 api_key、today_messages、messages_date、card_mode）、habits、plans、backlog、task_cards、conversation_summaries、project_files、notification_logs
 - Supabase Auth 登入 + session 持久化（nuxt.config.ts redirectOptions）
 - Vercel 部署完成：keeper-eight-inky.vercel.app
+- PWA 設定
+- ✅ Notes tab
+- ✅ Reference Books
+- ✅ 滾動式記憶架構（週摘要、月摘要資料表與 Cron）
+- ✅ 登出功能
+- ✅ PWA 設定
+- ✅ 對話摘要寫回 conversation_summaries（每日 Cron）
+- ✅ weekly_summaries 資料表 + 每週摘要 Cron
+- ✅ monthly_summaries 資料表 + 每月摘要 Cron
+-  Backlog tab 串接 Supabase
 
 ### 待完成
 - [ ] pages/ui-kit.vue
 - [ ] PWA 設定
 - [ ] Vercel Cron 推播通知
-- [ ] 對話摘要寫回 conversation_summaries（每日 Cron）
-- [ ] weekly_summaries 資料表 + 每週摘要 Cron
 - [ ] 手機版 iOS Safari 鍵盤收起後底部白色空白問題
 
 ### 待辦清單（功能擴充）
@@ -190,6 +198,5 @@ Vercel：Settings → Environment Variables 手動設定
   - 7天摘要 → 週摘要（保留4週）
   - 4週摘要 → 月摘要（保留3個月）
   - 3個月摘要 → 歷史總摘要（滾動壓縮）
-- [ ] Backlog tab 串接 Supabase
 - [ ] AI 回饋文字（缺席補發後）
 - [ ] 計畫視覺圖

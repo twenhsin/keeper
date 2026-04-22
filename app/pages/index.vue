@@ -135,17 +135,39 @@ onMounted(async () => {
 
   // ===== 拉督促提醒 =====
   try {
-    const res = await $fetch('/api/chat', {
+    const res = await fetch('/api/chat', {
       method: 'POST',
-      body: { mode: 'reminder', messages: [], userId: userId.value, apiKey: apiKey.value, notes: userNotes.value }
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ mode: 'reminder', messages: [], userId: userId.value, apiKey: apiKey.value, notes: userNotes.value })
     })
-    reminderText.value = res.content
-  } catch (err) {
-    if (err?.statusCode === 401) {
-      reminderText.value = '請先至 Setting 設定有效的 Claude API Key'
-    } else {
-      reminderText.value = '無法載入提醒，請稍後再試'
+    if (!res.ok) {
+      reminderText.value = res.status === 401 ? '請先至 Setting 設定有效的 Claude API Key' : '無法載入提醒，請稍後再試'
+      isLoadingReminder.value = false
+      return
     }
+
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    reminderText.value = ''
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      const chunk = decoder.decode(value, { stream: true })
+      const lines = chunk.split('\n')
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue
+        const data = line.slice(6)
+        if (data === '[DONE]') break
+        try {
+          const json = JSON.parse(data)
+          const delta = json.delta?.text ?? ''
+          if (delta) reminderText.value += delta
+        } catch {}
+      }
+    }
+  } catch (err) {
+    reminderText.value = '無法載入提醒，請稍後再試'
   } finally {
     isLoadingReminder.value = false
   }
@@ -189,9 +211,36 @@ async function sendMessage() {
         messages.value.push({ role: 'assistant', content: '發生錯誤，請稍後再試' })
       }
     } else {
-      const data = await res.json()
-      const displayContent = await processAssistantContent(data.content)
-      messages.value.push({ role: 'assistant', content: displayContent })
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let fullContent = ''
+
+      messages.value.push({ role: 'assistant', content: '' })
+      const lastIdx = messages.value.length - 1
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        const chunk = decoder.decode(value, { stream: true })
+        const lines = chunk.split('\n')
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue
+          const data = line.slice(6)
+          if (data === '[DONE]') break
+          try {
+            const json = JSON.parse(data)
+            const delta = json.delta?.text ?? ''
+            if (delta) {
+              fullContent += delta
+              messages.value[lastIdx] = { role: 'assistant', content: fullContent }
+              nextTick(scrollToBottom)
+            }
+          } catch {}
+        }
+      }
+
+      const displayContent = await processAssistantContent(fullContent)
+      messages.value[lastIdx] = { role: 'assistant', content: displayContent }
       await saveMessages()
     }
   } catch (e) {
@@ -241,8 +290,13 @@ async function processAssistantContent(content) {
         user_id: userId.value,
         title: parsed.title,
         description: parsed.description ?? '',
-        frequency_days: parsed.frequency_days,
-        notify_time: parsed.notify_time,
+        required_weekdays: parsed.required_weekdays ?? null,
+        period_days: parsed.period_days ?? null,
+        allow_extra: parsed.allow_extra ?? false,
+        allow_makeup: parsed.allow_makeup ?? false,
+        daily_slots: parsed.daily_slots ?? 1,
+        card_show_time: parsed.card_show_time ?? null,
+        notify_times: parsed.notify_times ?? [],
         is_active: true
       })
     } else if (type === 'long_term') {
