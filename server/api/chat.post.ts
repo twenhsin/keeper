@@ -31,7 +31,7 @@ export default defineEventHandler(async (event) => {
       .single(),
     supabase
       .from('habits')
-      .select('id, title, description, frequency_days, notify_time, created_at')
+      .select('id, title, description, required_weekdays, period_days, allow_extra, allow_makeup, card_show_time, notify_times, is_active, created_at')
       .eq('user_id', userId)
       .eq('is_active', true),
     supabase
@@ -79,10 +79,22 @@ export default defineEventHandler(async (event) => {
   const weeklySummaries = weeklySummariesRes.data ?? []
   const monthlySummaries = monthlySummariesRes.data ?? []
 
+  const weekdayNames = ['週日', '週一', '週二', '週三', '週四', '週五', '週六']
+
   const habitsBlock = habits.length > 0
     ? habits.map(h => {
-        const createdDate = new Date(h.created_at).toLocaleDateString('zh-TW', { timeZone: 'Asia/Taipei' }).replace(/\//g, '-')
-        return `- ${h.title} | 每 ${h.frequency_days} 天 | 通知 ${h.notify_time ?? '未設定'} | 建立日期：${createdDate} | ${h.description ?? ''}`
+        const fixedDays = h.required_weekdays?.length
+          ? h.required_weekdays.map((d: number) => weekdayNames[d]).join('、')
+          : null
+        const schedule = fixedDays
+          ? `固定 ${fixedDays}`
+          : h.period_days
+            ? `每 ${h.period_days} 天`
+            : '每天'
+        const extra = h.allow_extra ? '｜可加分打卡' : ''
+        const makeup = h.allow_makeup ? '｜可補打卡' : ''
+        const notify = h.notify_times?.length ? h.notify_times.join('、') : '未設定'
+        return `- ${h.title} | ${schedule}${extra}${makeup} | 通知 ${notify} | ${h.description ?? ''}`
       }).join('\n')
     : '（目前無啟用中的習慣任務）'
 
@@ -121,14 +133,18 @@ export default defineEventHandler(async (event) => {
 
 欄位說明：
 - description：必填。用繁體中文撰寫，100字以內，包含具體執行內容、時長、頻率，以及用戶提到的任何重要細節。
-- notify_time / notify_morning / notify_evening：填入用戶希望收到提醒的時間，不是執行時間。例如用戶七點運動但希望六點半提醒，填 06:30。
-- card_mode（習慣任務專用）：
-  - "daily"：執行日彈性，用戶可任意一天執行（例如「一週兩次，隨便哪天」、「有空就去」）
-  - "scheduled"：固定執行日，只在特定星期幾執行（例如「每週日」、「每週三和週六」且沒有提到補執行）
+- notify_morning / notify_evening：填入用戶希望收到提醒的時間，不是執行時間。例如用戶七點運動但希望六點半提醒，填 06:30。
+- required_weekdays：固定執行的星期幾，0=週日、1=週一…6=週六，例 [3,0] 代表週三和週日。沒有固定日填 null
+- period_days：週期卡，每 N 天出現一次。有 required_weekdays 時填 null
+- allow_extra：非固定日是否也出現加分打卡卡片
+- allow_makeup：錯過固定日或週期日，隔天是否補一張打卡卡片
+- daily_slots：一天幾張卡，預設 1，早晚各一填 2
+- card_show_time：卡片從幾點開始顯示，null 表示全天顯示
+- notify_times：推播通知時間，陣列格式
 
 習慣任務：
 \`\`\`json
-{"type":"habit","title":"","description":"","frequency_days":0,"notify_time":"HH:MM","card_mode":"daily|scheduled"}
+{"type":"habit","title":"","description":"","required_weekdays":[0,3],"period_days":null,"allow_extra":false,"allow_makeup":false,"daily_slots":1,"card_show_time":null,"notify_times":["HH:MM"]}
 \`\`\`
 
 長期任務：

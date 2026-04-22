@@ -12,7 +12,7 @@
       <!-- 載入中 -->
       <p v-if="loading" class="empty-hint">載入中...</p>
 
-      <!-- 區塊一：待確認打卡卡片 -->
+      <!-- 區塊一：今日待確認 -->
       <div v-if="checkInCards.length > 0" class="checkin-list">
         <BaseCard
           v-for="card in checkInCards"
@@ -21,13 +21,34 @@
           :opacity="80"
           class="checkin-card"
         >
-          <p class="checkin-title">{{ card.title }}</p>
-          <AppButton label="Check in" class="checkin-action-btn" @click="checkIn(card.id)" />
+          <p class="checkin-title">
+            {{ card.title }}
+            <span v-if="card.isExtra" class="extra-badge">＋加分</span>
+          </p>
+          <AppButton label="Check in" class="checkin-action-btn" @click="checkIn(card)" />
         </BaseCard>
       </div>
 
+      <!-- 區塊二：待補打卡 -->
+      <div v-if="makeupCards.length > 0" class="section">
+        <h2 class="section-title">待補打卡 {{ makeupCards.length }}</h2>
+        <div class="checkin-list">
+          <BaseCard
+            v-for="card in makeupCards"
+            :key="card.id + card.scheduledDate"
+            padding="lg"
+            :opacity="80"
+            class="checkin-card"
+          >
+            <p class="checkin-title">{{ card.title }}</p>
+            <p class="checkin-date">補 {{ card.scheduledDate.slice(5).replace('-', '/') }}</p>
+            <AppButton label="Check in" class="checkin-action-btn" @click="checkIn(card)" />
+          </BaseCard>
+        </div>
+      </div>
+
       <!-- 空狀態 -->
-      <p v-if="!loading && checkInCards.length === 0 && progressItems.length === 0" class="empty-hint">
+      <p v-if="!loading && checkInCards.length === 0 && makeupCards.length === 0 && progressItems.length === 0" class="empty-hint">
         目前沒有進行中的任務
       </p>
 
@@ -68,6 +89,7 @@ const supabase = useSupabaseClient()
 
 const loading = ref(true)
 const checkInCards = ref([])
+const makeupCards = ref([])
 const progressItems = ref([])
 
 /* ===== 日期工具 ===== */
@@ -111,14 +133,32 @@ onMounted(async () => {
   // ===== 打卡卡片：前端動態生成 =====
   const { data: activeHabits } = await supabase
     .from('habits')
-    .select('id, title, card_mode, frequency_days, created_at')
+    .select('id, title, required_weekdays, period_days, allow_extra, allow_makeup, card_show_time, created_at')
     .eq('user_id', userId)
     .eq('is_active', true)
 
   if (activeHabits && activeHabits.length > 0) {
     const todayStr = getTodayStr()
+    const todayWeekday = new Date().getDay()
+    const currentTime = new Date().toTimeString().slice(0, 5)
 
-    // 查今日已打卡的 habit ids
+    // 各 habit 最近一筆完成記錄
+    const { data: lastDoneRows } = await supabase
+      .from('task_cards')
+      .select('ref_id, confirmed_at')
+      .eq('user_id', userId)
+      .eq('task_type', 'habit')
+      .eq('is_completed', true)
+      .order('confirmed_at', { ascending: false })
+
+    const lastDoneMap = {}
+    for (const row of (lastDoneRows ?? [])) {
+      if (!lastDoneMap[row.ref_id]) {
+        lastDoneMap[row.ref_id] = row.confirmed_at.slice(0, 10)
+      }
+    }
+
+    // 今日已打卡 ids
     const { data: todayDone } = await supabase
       .from('task_cards')
       .select('ref_id')
@@ -129,22 +169,82 @@ onMounted(async () => {
 
     const doneSet = new Set((todayDone ?? []).map(r => r.ref_id))
 
-    checkInCards.value = activeHabits
-      .filter(h => {
-        if (doneSet.has(h.id)) return false
-        if (h.card_mode === 'daily') return true
-        // scheduled：依 frequency_days 和 created_at 推算今天是否為執行日
-        if (h.card_mode === 'scheduled' && h.frequency_days > 0) {
-          const origin = new Date(h.created_at)
-          origin.setHours(0, 0, 0, 0)
-          const today = new Date()
-          today.setHours(0, 0, 0, 0)
-          const diffDays = Math.round((today - origin) / 86400000)
-          return diffDays % h.frequency_days === 0
-        }
-        return false
-      })
-      .map(h => ({ id: h.id, title: h.title }))
+    // 今日卡片
+    const todayCards = []
+    for (const h of activeHabits) {
+      if (doneSet.has(h.id)) continue
+
+      const showTime = h.card_show_time ? h.card_show_time.slice(0, 5) : null
+      if (showTime && currentTime < showTime) continue
+
+      const hasRequired = h.required_weekdays?.length > 0
+      const hasPeriod = h.period_days > 0
+
+      let isFixed = hasRequired && h.required_weekdays.includes(todayWeekday)
+
+      let isPeriodDue = false
+      if (hasPeriod) {
+        const baseStr = lastDoneMap[h.id] ?? h.created_at.slice(0, 10)
+        const base = new Date(baseStr); base.setHours(0, 0, 0, 0)
+        const today = new Date(); today.setHours(0, 0, 0, 0)
+        isPeriodDue = Math.round((today - base) / 86400000) >= h.period_days
+      }
+
+      if (isFixed) {
+        todayCards.push({ id: h.id, title: h.title, isExtra: false, scheduledDate: todayStr, slotIndex: 0 })
+        continue
+      }
+      if (h.allow_extra && hasRequired && !h.required_weekdays.includes(todayWeekday)) {
+        todayCards.push({ id: h.id, title: h.title, isExtra: true, scheduledDate: todayStr, slotIndex: 0 })
+        continue
+      }
+      if (isPeriodDue) {
+        todayCards.push({ id: h.id, title: h.title, isExtra: false, scheduledDate: todayStr, slotIndex: 0 })
+      }
+    }
+    checkInCards.value = todayCards
+
+    // 補打卡
+    const yesterdayStr = (() => {
+      const d = new Date(); d.setDate(d.getDate() - 1)
+      return d.toISOString().slice(0, 10)
+    })()
+
+    const { data: yesterdayDone } = await supabase
+      .from('task_cards')
+      .select('ref_id')
+      .eq('user_id', userId)
+      .eq('task_type', 'habit')
+      .eq('scheduled_date', yesterdayStr)
+      .eq('is_completed', true)
+
+    const yesterdayDoneSet = new Set((yesterdayDone ?? []).map(r => r.ref_id))
+    const yesterdayWeekday = new Date(yesterdayStr).getDay()
+    const makeupList = []
+
+    for (const h of activeHabits) {
+      if (!h.allow_makeup) continue
+      if (yesterdayDoneSet.has(h.id)) continue
+
+      const hasRequired = h.required_weekdays?.length > 0
+      const hasPeriod = h.period_days > 0
+      let shouldHaveAppeared = false
+
+      if (hasRequired && h.required_weekdays.includes(yesterdayWeekday)) {
+        shouldHaveAppeared = true
+      }
+      if (hasPeriod && !shouldHaveAppeared) {
+        const baseStr = lastDoneMap[h.id] ?? h.created_at.slice(0, 10)
+        const base = new Date(baseStr); base.setHours(0, 0, 0, 0)
+        const yesterday = new Date(yesterdayStr); yesterday.setHours(0, 0, 0, 0)
+        if (Math.round((yesterday - base) / 86400000) >= h.period_days) shouldHaveAppeared = true
+      }
+
+      if (shouldHaveAppeared) {
+        makeupList.push({ id: h.id, title: h.title, isExtra: false, scheduledDate: yesterdayStr, slotIndex: 0 })
+      }
+    }
+    makeupCards.value = makeupList
   }
 
   // ===== Progress Report：啟用中任務 =====
@@ -196,7 +296,7 @@ onMounted(async () => {
 })
 
 /* ===== Check in =====  */
-async function checkIn(habitId) {
+async function checkIn(card) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return
 
@@ -205,14 +305,17 @@ async function checkIn(habitId) {
     .insert({
       user_id: user.id,
       task_type: 'habit',
-      ref_id: habitId,
-      scheduled_date: getTodayStr(),
+      ref_id: card.id,
+      scheduled_date: card.scheduledDate,
       is_completed: true,
+      is_extra: card.isExtra ?? false,
+      slot_index: card.slotIndex ?? 0,
       confirmed_at: new Date().toISOString()
     })
 
   if (!error) {
-    checkInCards.value = checkInCards.value.filter(card => card.id !== habitId)
+    checkInCards.value = checkInCards.value.filter(c => c.id !== card.id)
+    makeupCards.value = makeupCards.value.filter(c => !(c.id === card.id && c.scheduledDate === card.scheduledDate))
   }
 }
 </script>
@@ -296,6 +399,20 @@ async function checkIn(habitId) {
   color: var(--text-primary);
   margin: 0;
   text-align: center;
+}
+
+.extra-badge {
+  font-size: var(--typography-caption-size, 0.75rem);
+  color: var(--text-brand);
+  margin-left: 0.25rem;
+}
+
+.checkin-date {
+  font-size: var(--typography-caption-size, 0.75rem);
+  color: var(--text-secondary, var(--text-primary));
+  margin: 0;
+  text-align: center;
+  opacity: 0.7;
 }
 
 /* ===== Section ===== */
