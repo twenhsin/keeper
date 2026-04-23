@@ -126,30 +126,32 @@ onMounted(async () => {
     await supabase.from('users').update({ today_messages: [], messages_date: today }).eq('id', user.id)
   }
 
-  // ===== 讀取 Notes =====
-  const { data: notesData } = await supabase
+  // ===== 讀取 Notes + 拉督促提醒（並行）=====
+  const notesPromise = supabase
     .from('notes')
     .select('id, content')
     .eq('user_id', user.id)
-  userNotes.value = notesData ?? []
 
-  // ===== 拉督促提醒 =====
+  const reminderPromise = fetch('/api/chat', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ mode: 'reminder', messages: [], userId: userId.value, apiKey: apiKey.value, notes: [] })
+  })
+
+  const [notesRes, reminderRes] = await Promise.all([notesPromise, reminderPromise])
+  userNotes.value = notesRes.data ?? []
+
+  if (!reminderRes.ok) {
+    reminderText.value = reminderRes.status === 401 ? '請先至 Setting 設定有效的 Claude API Key' : '無法載入提醒，請稍後再試'
+    isLoadingReminder.value = false
+    return
+  }
+
+  const reader = reminderRes.body.getReader()
+  const decoder = new TextDecoder()
+  reminderText.value = ''
+
   try {
-    const res = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ mode: 'reminder', messages: [], userId: userId.value, apiKey: apiKey.value, notes: userNotes.value })
-    })
-    if (!res.ok) {
-      reminderText.value = res.status === 401 ? '請先至 Setting 設定有效的 Claude API Key' : '無法載入提醒，請稍後再試'
-      isLoadingReminder.value = false
-      return
-    }
-
-    const reader = res.body.getReader()
-    const decoder = new TextDecoder()
-    reminderText.value = ''
-
     while (true) {
       const { done, value } = await reader.read()
       if (done) break
@@ -166,7 +168,7 @@ onMounted(async () => {
         } catch {}
       }
     }
-  } catch (err) {
+  } catch {
     reminderText.value = '無法載入提醒，請稍後再試'
   } finally {
     isLoadingReminder.value = false
