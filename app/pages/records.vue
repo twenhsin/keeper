@@ -10,7 +10,7 @@
     <!-- Scrollable Content -->
     <div class="main-content">
       <!-- 載入中 -->
-      <p v-if="loading" class="empty-hint">載入中...</p>
+      <LoadingDots v-if="loading" />
 
       <!-- 區塊一：今日待確認 -->
       <div v-if="checkInCards.length > 0" class="checkin-list">

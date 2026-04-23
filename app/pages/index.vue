@@ -7,9 +7,8 @@
       <div ref="chatEl" class="chat-area">
         <!-- 督促提醒文字（非對話模式） -->
         <template v-if="!isChatMode">
-          <p class="ai-reminder">
-            {{ isLoadingReminder ? '...' : reminderText }}
-          </p>
+          <LoadingDots v-if="isLoadingReminder" />
+          <p v-else class="ai-reminder">{{ reminderText }}</p>
         </template>
 
         <!-- 對話訊息列表（對話模式） -->

@@ -45,28 +45,34 @@ export default defineEventHandler(async (event) => {
       .eq('user_id', userId)
       .gte('scheduled_date', sevenDaysAgo)
       .order('scheduled_date', { ascending: false }),
-    supabase
-      .from('conversation_summaries')
-      .select('summary, created_at')
-      .eq('user_id', userId)
-      .gte('created_at', sevenDaysAgo)
-      .order('created_at', { ascending: false }),
+    mode === 'reminder'
+      ? Promise.resolve({ data: [] })
+      : supabase
+          .from('conversation_summaries')
+          .select('summary, created_at')
+          .eq('user_id', userId)
+          .gte('created_at', sevenDaysAgo)
+          .order('created_at', { ascending: false }),
     supabase
       .from('reference_books')
       .select('title')
       .eq('user_id', userId),
-    supabase
-      .from('weekly_summaries')
-      .select('summary, week_start')
-      .eq('user_id', userId)
-      .gte('created_at', twentyEightDaysAgo)
-      .order('week_start', { ascending: false }),
-    supabase
-      .from('monthly_summaries')
-      .select('summary, month_start')
-      .eq('user_id', userId)
-      .gte('created_at', ninetyDaysAgo)
-      .order('month_start', { ascending: false })
+    mode === 'reminder'
+      ? Promise.resolve({ data: [] })
+      : supabase
+          .from('weekly_summaries')
+          .select('summary, week_start')
+          .eq('user_id', userId)
+          .gte('created_at', twentyEightDaysAgo)
+          .order('week_start', { ascending: false }),
+    mode === 'reminder'
+      ? Promise.resolve({ data: [] })
+      : supabase
+          .from('monthly_summaries')
+          .select('summary, month_start')
+          .eq('user_id', userId)
+          .gte('created_at', ninetyDaysAgo)
+          .order('month_start', { ascending: false })
   ])
 
   // ===== 組裝 System Prompt =====

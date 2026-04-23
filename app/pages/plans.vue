@@ -28,7 +28,7 @@
       <!-- 清單區 -->
       <div class="plan-list">
         <!-- 載入中 -->
-        <p v-if="loading" class="empty-hint">載入中...</p>
+        <LoadingDots v-if="loading" />
 
         <!-- Habits / Long-term：PlanCard + Toggle -->
         <template v-else-if="activeTab === 'habits' || activeTab === 'longterm'">
