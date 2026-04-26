@@ -286,6 +286,24 @@ async function processAssistantContent(content) {
     const parsed = JSON.parse(jsonMatch[1])
     const { type, title } = parsed
 
+    if (type === 'habit_update') {
+      const { id, ...updateFields } = parsed
+      if (!id) return content
+      await supabase.from('habits').update({
+        title: updateFields.title,
+        description: updateFields.description ?? '',
+        required_weekdays: updateFields.required_weekdays ?? null,
+        period_days: updateFields.period_days ?? null,
+        allow_extra: updateFields.allow_extra ?? false,
+        allow_makeup: updateFields.allow_makeup ?? false,
+        daily_slots: updateFields.daily_slots ?? 1,
+        card_show_time: updateFields.card_show_time ?? null,
+        notify_times: updateFields.notify_times ?? []
+      }).eq('id', id).eq('user_id', userId.value)
+      showToast(`已更新任務：${updateFields.title}`)
+      return content.replace(jsonMatch[0], `✓ 已更新任務：${updateFields.title}`)
+    }
+
     if (type === 'habit') {
       await supabase.from('habits').insert({
         user_id: userId.value,

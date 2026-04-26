@@ -21,11 +21,14 @@
             placeholder="貼上你的 Claude API Key"
             @input="handleApiKeyInput"
           />
-          <button class="upload-btn" type="button" @click="saveApiKey">
+          <button v-show="hasApiKeyInput && !isMaskedDisplay" class="upload-btn" type="button" @click="saveApiKey">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 15V4M12 4L8 8M12 4L16 8" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
               <path d="M4 17v1a2 2 0 002 2h12a2 2 0 002-2v-1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
+          </button>
+          <button v-show="isMaskedDisplay" class="upload-btn" type="button" @click="confirmDelete(clearApiKey)">
+            <Trash2 :size="18" :stroke-width="2" color="white" />
           </button>
         </div>
       </div>
@@ -41,13 +44,12 @@
             @input="handleAboutInput"
           />
           <button
+            v-show="aboutSaveState !== 'disabled'"
             class="save-btn"
             type="button"
-            :disabled="aboutSaveState === 'disabled'"
-            :class="{ 'save-btn--disabled': aboutSaveState === 'disabled' }"
-            @click="saveAboutMe"
+            @click="aboutSaveState === 'saved' ? confirmDelete(clearAboutMe) : saveAboutMe()"
           >
-            <Check v-if="aboutSaveState === 'saved'" :size="18" :stroke-width="2" color="white" />
+            <Trash2 v-if="aboutSaveState === 'saved'" :size="18" :stroke-width="2" color="white" />
             <Save v-else :size="18" :stroke-width="2" color="white" />
           </button>
         </div>
@@ -67,11 +69,10 @@
               @keydown="(e) => handleRefBookEnter(e, index)"
             />
             <button
+              v-show="book.saved || book.title.trim()"
               class="ref-book-btn"
               type="button"
-              :disabled="!book.saved && !book.title.trim()"
-              :class="{ 'ref-book-btn--disabled': !book.saved && !book.title.trim() }"
-              @click="book.saved ? deleteRefBook(index) : saveRefBook(index)"
+              @click="book.saved ? confirmDelete(() => deleteRefBook(index)) : saveRefBook(index)"
             >
               <Trash2 v-if="book.saved" :size="18" :stroke-width="2" color="white" />
               <Save v-else :size="18" :stroke-width="2" color="white" />
@@ -109,6 +110,13 @@
       @change="handleFileUpload"
     />
 
+    <!-- ConfirmDialog -->
+    <ConfirmDialog
+      v-model="showConfirm"
+      message="確定刪除？"
+      @confirm="executeDelete"
+    />
+
     <!-- Toast -->
     <Transition name="toast">
       <div v-if="toastMsg" class="toast">{{ toastMsg }}</div>
@@ -117,7 +125,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { Save, Check, Trash2 } from 'lucide-vue-next'
 
 definePageMeta({ middleware: 'setting' })
@@ -129,6 +137,7 @@ const user = useSupabaseUser()
 const apiKeyInput = ref('')
 const rawApiKey = ref('')
 const isMaskedDisplay = ref(false)
+const hasApiKeyInput = computed(() => apiKeyInput.value.trim().length > 0)
 
 function maskKey(key) {
   if (!key || key.length <= 5) return key
@@ -169,6 +178,14 @@ async function saveApiKey() {
   }
 }
 
+function clearApiKey() {
+  localStorage.removeItem('keeper_api_key')
+  rawApiKey.value = ''
+  apiKeyInput.value = ''
+  isMaskedDisplay.value = false
+  showToast('已清除 API Key')
+}
+
 // ===== About Me =====
 const aboutMe = ref('')
 // 'disabled'（無文字）| 'save'（可儲存）| 'saved'（已儲存）
@@ -190,6 +207,16 @@ async function saveAboutMe() {
     aboutSaveState.value = 'saved'
     showToast('已儲存')
   }
+}
+
+async function clearAboutMe() {
+  const { data: { user: currentUser } } = await supabase.auth.getUser()
+  const userId = currentUser?.id
+  if (!userId) return
+  await supabase.from('users').upsert({ id: userId, personal_summary: '' })
+  aboutMe.value = ''
+  aboutSaveState.value = 'disabled'
+  showToast('已清除')
 }
 
 // ===== Reference Books =====
@@ -328,6 +355,22 @@ async function deleteFile(fileId) {
   }
 }
 
+// ===== Confirm Dialog =====
+const showConfirm = ref(false)
+const pendingDelete = ref(null)
+
+function confirmDelete(action) {
+  pendingDelete.value = action
+  showConfirm.value = true
+}
+
+async function executeDelete() {
+  if (pendingDelete.value) {
+    await pendingDelete.value()
+    pendingDelete.value = null
+  }
+}
+
 // ===== Toast =====
 const toastMsg = ref('')
 let toastTimer = null
@@ -362,7 +405,7 @@ onMounted(async () => {
 
   if (userData?.personal_summary) {
     aboutMe.value = userData.personal_summary
-    aboutSaveState.value = 'save'
+    aboutSaveState.value = 'saved'
   }
 
   await fetchProjectFiles()
@@ -533,11 +576,6 @@ onMounted(async () => {
   transition: opacity 0.2s ease;
 }
 
-.save-btn--disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
 /* ===== Reference Books ===== */
 .ref-book-list {
   display: flex;
@@ -590,11 +628,6 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   transition: opacity 0.2s ease;
-}
-
-.ref-book-btn--disabled {
-  opacity: 0.5;
-  cursor: default;
 }
 
 /* ===== File 列表 ===== */

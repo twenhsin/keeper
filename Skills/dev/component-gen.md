@@ -19,6 +19,8 @@
 1. 出現在兩個以上頁面
 2. 結構複雜且具獨立功能（即使只出現一次）
 3. 有多個 props 變體或互動狀態
+4. 包含 CSS animation 或複雜視覺狀態（loading、skeleton、transition）
+   的區塊，即使目前只出現一次，也建議獨立為 component
 
 不符合以上條件 → 直接寫在頁面 `.vue` 檔內，不強制抽取。
 
@@ -237,7 +239,9 @@ const props = defineProps({
 
 ## 五、新元件建立流程
 
-1. 確認元件清單中不存在相同功能元件
+1. 確認元件清單中不存在相同功能
+   → 搜尋關鍵字：loading、skeleton、toast、badge、tag、empty state
+   → 這類通用 UI 狀態元件優先抽取
 2. 判斷是否符合拆分標準（第二節）
 3. 確認基於哪個基礎元件（BaseCard / 獨立）
 4. 依照第四節模板生成 `.vue` 檔

@@ -41,7 +41,7 @@
             :is-active="plan.isActive"
             @update:is-active="val => plan.isActive = val"
             @open-detail="selectedPlan = plan"
-            @delete="deleteRemotePlan"
+            @delete="(id) => confirmDelete(() => deleteRemotePlan(id))"
           />
           <p v-if="currentPlans.length === 0" class="empty-hint">尚無計畫</p>
         </template>
@@ -55,10 +55,10 @@
             :opacity="80"
             class="backlog-card"
           >
-            <div class="backlog-row">
-              <span class="backlog-title">{{ item.title }}</span>
-              <button class="delete-btn" type="button" @click="deleteBacklog(item.id)">×</button>
-            </div>
+            <span class="backlog-title">{{ item.title }}</span>
+            <button class="delete-btn" type="button" @click="confirmDelete(() => deleteBacklog(item.id))">
+              <X :size="20" :stroke-width="2" />
+            </button>
           </BaseCard>
           <p v-if="plansData.backlog.length === 0" class="empty-hint">尚無計畫</p>
         </template>
@@ -72,12 +72,10 @@
             :opacity="80"
             class="backlog-card"
           >
-            <div class="backlog-row">
-              <span class="note-text">{{ note.content }}</span>
-              <button class="trash-btn" type="button" @click="deleteNote(note.id)">
-                <Trash2 :size="16" />
-              </button>
-            </div>
+            <span class="note-text">{{ note.content }}</span>
+            <button class="delete-btn" type="button" @click="confirmDelete(() => deleteNote(note.id))">
+              <X :size="20" :stroke-width="2" />
+            </button>
           </BaseCard>
           <p v-if="notes.length === 0" class="empty-hint">還沒有任何 notes</p>
         </template>
@@ -122,6 +120,13 @@
       </div>
     </div>
 
+    <!-- ConfirmDialog -->
+    <ConfirmDialog
+      v-model="showConfirm"
+      message="確定刪除？"
+      @confirm="executeDelete"
+    />
+
     <!-- Detail 彈窗（Habits / Long-term） -->
     <Teleport to="body">
       <div
@@ -146,7 +151,7 @@
 
 <script setup>
 import { ref, reactive, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
-import { Trash2 } from 'lucide-vue-next'
+import { X } from 'lucide-vue-next'
 
 const supabase = useSupabaseClient()
 
@@ -307,6 +312,22 @@ function showToastMsg(message) {
   toastTimer = setTimeout(() => { toast.show = false }, 3000)
 }
 
+// ===== Confirm Dialog =====
+const showConfirm = ref(false)
+const pendingDelete = ref(null)
+
+function confirmDelete(action) {
+  pendingDelete.value = action
+  showConfirm.value = true
+}
+
+async function executeDelete() {
+  if (pendingDelete.value) {
+    await pendingDelete.value()
+    pendingDelete.value = null
+  }
+}
+
 onBeforeUnmount(() => clearTimeout(toastTimer))
 </script>
 
@@ -381,13 +402,8 @@ onBeforeUnmount(() => clearTimeout(toastTimer))
 /* ===== Backlog / Notes 卡片 ===== */
 .backlog-card {
   cursor: default;
-}
-
-.backlog-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--core-spacing-400);
+  position: relative;
+  padding-right: 36px;
 }
 
 .backlog-title {
@@ -404,25 +420,17 @@ onBeforeUnmount(() => clearTimeout(toastTimer))
 }
 
 .delete-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
   background: none;
   border: none;
   padding: 0;
-  font-size: 2rem;
-  line-height: 1;
   color: var(--text-danger);
   cursor: pointer;
-  flex-shrink: 0;
-}
-
-.trash-btn {
-  background: none;
-  border: none;
-  padding: 0;
   display: flex;
   align-items: center;
-  color: var(--text-danger);
-  cursor: pointer;
-  flex-shrink: 0;
+  justify-content: center;
 }
 
 /* ===== 共用 Overlay ===== */

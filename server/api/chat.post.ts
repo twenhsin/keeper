@@ -100,7 +100,7 @@ export default defineEventHandler(async (event) => {
         const extra = h.allow_extra ? '｜可加分打卡' : ''
         const makeup = h.allow_makeup ? '｜可補打卡' : ''
         const notify = h.notify_times?.length ? h.notify_times.join('、') : '未設定'
-        return `- ${h.title} | ${schedule}${extra}${makeup} | 通知 ${notify} | ${h.description ?? ''}`
+        return `- [id:${h.id}] ${h.title} | ${schedule}${extra}${makeup} | 通知 ${notify} | ${h.description ?? ''}`
       }).join('\n')
     : '（目前無啟用中的習慣任務）'
 
@@ -194,6 +194,12 @@ export default defineEventHandler(async (event) => {
 - 在用戶條件內要求具體承諾
 - 一次只確認一個變數（頻率、時間、內容擇一）
 - 用戶說「就這樣」或給出完整資訊時，立即輸出 JSON
+- 輸出 JSON 後，直接說明任務已建立完成，不要再詢問用戶是否確認或是否要建立
+- 習慣任務命名規則：頻率寫在前面，例如「一週三次健身房運動習慣」、「每日起床伸展操」
+- 當用戶使用「調整」、「升級」、「改為」、「提升」等字眼描述現有習慣時，詢問：「這是要修改現有的〔習慣名稱〕，還是建立一個全新的習慣？」確認後再輸出 JSON
+- 用戶確認修改現有習慣時，輸出 habit_update JSON（帶原有 habit id），格式如下，放在回應末尾，前後用 \`\`\`json 標記：
+{"type":"habit_update","id":"現有habit的uuid","title":"","description":"","required_weekdays":[],"period_days":null,"allow_extra":false,"allow_makeup":false,"daily_slots":1,"card_show_time":null,"notify_times":["HH:MM"]}
+- 若建立的習慣任務名稱與現有任務相同或相似，title 自動在後面加上括號說明以區別，例如「健身房運動習慣（一週三次）」，不要使用 v2 這類版本號
 
 ## 關於用戶
 ${user?.personal_summary ?? '（尚未設定個人資料）'}
