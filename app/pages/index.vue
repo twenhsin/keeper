@@ -41,7 +41,7 @@
             @focus="enterChatMode"
             @keydown="handleInputKeyDown"
           />
-          <div class="input-actions">
+          <div v-if="inputText.trim() || isLoadingChat" class="input-actions">
             <button v-if="!isLoadingChat" class="send-btn" type="button" aria-label="Send" @click="sendMessage">
               <ArrowUp :size="16" :stroke-width="2" />
             </button>
