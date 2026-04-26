@@ -103,17 +103,21 @@ function getTodayStr() {
 
 function getWeekStart() {
   const now = new Date()
-  const day = now.getDay() // 0=Sun
-  const diff = day === 0 ? 6 : day - 1 // 週一為起點
+  const day = now.getDay()
+  const diff = day === 0 ? 6 : day - 1
   const monday = new Date(now)
-  monday.setHours(0, 0, 0, 0)
   monday.setDate(now.getDate() - diff)
-  return monday.toISOString()
+  const y = monday.getFullYear()
+  const m = String(monday.getMonth() + 1).padStart(2, '0')
+  const d = String(monday.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
 }
 
 function getMonthStart() {
   const now = new Date()
-  return new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+  const y = now.getFullYear()
+  const m = String(now.getMonth() + 1).padStart(2, '0')
+  return `${y}-${m}-01`
 }
 
 function getDaysInMonth() {
@@ -317,12 +321,29 @@ async function checkIn(card) {
     checkInCards.value = checkInCards.value.filter(c => c.id !== card.id)
     makeupCards.value = makeupCards.value.filter(c => !(c.id === card.id && c.scheduledDate === card.scheduledDate))
 
+    // 重新從 Supabase 撈取正確數字
+    const weekStart = getWeekStart()
+    const monthStart = getMonthStart()
+
+    const [weekRes, monthRes] = await Promise.all([
+      supabase.from('task_cards')
+        .select('ref_id')
+        .eq('user_id', user.id)
+        .eq('is_completed', true)
+        .eq('ref_id', card.id)
+        .gte('scheduled_date', weekStart),
+      supabase.from('task_cards')
+        .select('ref_id')
+        .eq('user_id', user.id)
+        .eq('is_completed', true)
+        .eq('ref_id', card.id)
+        .gte('scheduled_date', monthStart)
+    ])
+
     const target = progressItems.value.find(p => p.id === card.id)
     if (target) {
-      target.monthDone += 1
-      if (card.scheduledDate === getTodayStr()) {
-        target.weekDone += 1
-      }
+      target.weekDone = (weekRes.data ?? []).length
+      target.monthDone = (monthRes.data ?? []).length
     }
   }
 }

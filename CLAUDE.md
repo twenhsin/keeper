@@ -201,7 +201,6 @@ Vercel：Settings → Environment Variables 手動設定
 
 ### 待完成
 - [ ] pages/ui-kit.vue
-- [ ] PWA 設定
 - [ ] Vercel Cron 推播通知
 - [ ] 手機版 iOS Safari 鍵盤收起後底部白色空白問題
 

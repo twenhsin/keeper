@@ -307,6 +307,34 @@ linear-gradient(to bottom,
   - 手機版：grid-template-columns: repeat(3, 1fr)
   - 桌機版（≥ 768px）：grid-template-columns: repeat(6, 1fr)
 
+### LoadingDots
+- 三個圓點，尺寸 6×6px，圓形
+- 顏色：text/primary，opacity 0.4（靜止）→ 1（頂點）
+- Gap：6px
+- 動畫：上下起伏 6px，0.8s ease-in-out infinite
+- 三點 animation-delay：0s / 0.2s / 0.4s
+- 用途：取代所有頁面的「載入中...」文字
+
+### ConfirmDialog
+- 背景遮罩：rgba(0,0,0,0.2)，fixed inset 0
+- Dialog 背景：#FFFFFF，圓角 20px，padding 24px，寬度 280px
+- 說明文字：2.0rem，Regular，text/primary，置中
+- 按鈕區：grid 兩欄等寬，gap 12px
+- 取消按鈕：雙層結構（外層漸層 1px，內層白色），圓角 12px，高度 40px，文字 text/primary
+- 刪除按鈕：漸層背景，圓角 12px，高度 40px，文字白色
+
+### 刪除與關閉 icon 規則
+- 刪除功能：Trash2 icon，顏色 #FF7FDC，無背景框
+  適用：input 右側、textarea 右上角、清單卡片（Backlog、Notes）
+- 關閉/收合功能：X icon，顏色 text/danger
+  適用：detail 彈窗右上角
+
+### 輸入框交互狀態規則
+- 未輸入/未儲存：不顯示按鈕
+- 編輯中（有輸入）：Save icon，#FF7FDC，無背景
+- 已儲存：Trash2 icon，#FF7FDC，無背景
+- input 按鈕位置：右側垂直置中
+- textarea 按鈕位置：右上角，top 12px，right 12px
 ---
 
 ## 七、與其他 Skill 的關係

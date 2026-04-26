@@ -295,10 +295,38 @@ pages/
 | active | 漸層（#EE64C8 → #F4A875）|
 | disabled | opacity 50% |
 
+---
+
+## 十、輸入框交互狀態規則
+
+所有 input 和 textarea 的按鈕交互模式統一如下：
+
+### 按鈕顯示邏輯
+- 未輸入 / 已儲存且未編輯：不顯示儲存按鈕（v-if 控制，不佔空間）
+- 編輯中（有輸入文字）：顯示 Save icon
+- 已儲存狀態：顯示 Trash2 icon
+
+### 按鈕樣式
+- Save icon：Lucide `<Save>`，顏色 #FF7FDC，無背景框，無 border
+- Trash2 icon：Lucide `<Trash2>`，顏色 #FF7FDC，無背景框，無 border
+- 尺寸：40×40px
+
+### 按鈕位置
+- input（單行）：右側垂直置中
+- textarea（多行）：position absolute，top 12px，right 12px
+- textarea 需設 padding-right: 48px 避免文字被按鈕蓋住
+
+### 刪除確認
+- 所有刪除操作必須透過 ConfirmDialog 確認，不可直接刪除
+- 使用 `confirmDelete(action)` pattern，傳入刪除 function
+
+### 刪除 vs 關閉 icon 區別
+- 刪除功能 → Trash2
+- 關閉/收合（如 detail 彈窗）→ X icon
 
 ---
 
-## 十、回報格式
+## 十ㄧ、回報格式
 
 頁面生成完成後，回報：
 

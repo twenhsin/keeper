@@ -71,7 +71,24 @@
               <Trash2 v-else :size="20" :stroke-width="2" />
             </button>
           </BaseCard>
-          <p v-if="plansData.backlog.length === 0" class="empty-hint">尚無計畫</p>
+          <BaseCard padding="sm" :opacity="80" class="backlog-card">
+            <textarea
+              v-model="newWishTitle"
+              class="edit-textarea new-entry-textarea"
+              placeholder="新增計畫..."
+              rows="1"
+              @input="autoResize($event)"
+              @keydown.enter.exact.prevent="addToBacklog"
+            />
+            <button
+              v-if="newWishTitle.trim()"
+              class="delete-btn"
+              type="button"
+              @click="addToBacklog"
+            >
+              <Save :size="20" :stroke-width="2" />
+            </button>
+          </BaseCard>
         </template>
 
         <!-- Notes：內容 + 垃圾桶 -->
@@ -93,48 +110,28 @@
               <Trash2 v-else :size="20" :stroke-width="2" />
             </button>
           </BaseCard>
-          <p v-if="notes.length === 0" class="empty-hint">還沒有任何 notes</p>
+          <BaseCard padding="sm" :opacity="80" class="backlog-card">
+            <textarea
+              v-model="newNote"
+              class="edit-textarea new-entry-textarea"
+              placeholder="新增 note..."
+              rows="1"
+              @input="autoResize($event)"
+              @keydown.enter.exact.prevent="addNote"
+            />
+            <button
+              v-if="newNote.trim()"
+              class="delete-btn"
+              type="button"
+              @click="addNote"
+            >
+              <Save :size="20" :stroke-width="2" />
+            </button>
+          </BaseCard>
         </template>
       </div>
     </div>
 
-    <!-- Backlog 輸入框 -->
-    <div v-if="activeTab === 'backlog'" class="backlog-input-section">
-      <div class="input-outer">
-        <div class="input-inner">
-          <textarea
-            ref="backlogTextareaEl"
-            v-model="newWishTitle"
-            class="input-textarea"
-            placeholder="Add new wish"
-            @keydown.enter.exact.prevent="addToBacklog"
-            @input="resizeBacklogTextarea"
-          />
-          <div class="input-actions">
-            <AppButton label="Send" size="compact" @click="addToBacklog" />
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Notes 輸入框 -->
-    <div v-if="activeTab === 'notes'" class="backlog-input-section">
-      <div class="input-outer">
-        <div class="input-inner">
-          <textarea
-            ref="notesTextareaEl"
-            v-model="newNote"
-            class="input-textarea"
-            placeholder="Add a note..."
-            @keydown.enter="handleNoteEnter"
-            @input="resizeNotesTextarea"
-          />
-          <div class="input-actions">
-            <AppButton label="Send" size="compact" @click="addNote" />
-          </div>
-        </div>
-      </div>
-    </div>
 
     <!-- ConfirmDialog -->
     <ConfirmDialog
@@ -166,7 +163,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
 import { Trash2, Save } from 'lucide-vue-next'
 
 const supabase = useSupabaseClient()
@@ -230,7 +227,6 @@ const selectedPlan = ref(null)
 
 /* ===== Backlog input ===== */
 const newWishTitle = ref('')
-const backlogTextareaEl = ref(null)
 
 const editingBacklogId = ref(null)
 const editingBacklogTitle = ref('')
@@ -275,21 +271,12 @@ async function addToBacklog() {
   }
   plansData.backlog.push({ id: data.id, title: data.title })
   newWishTitle.value = ''
-  nextTick(() => resizeBacklogTextarea())
   showToastMsg('新增一則計畫')
-}
-
-function resizeBacklogTextarea() {
-  const el = backlogTextareaEl.value
-  if (!el) return
-  el.style.height = 'auto'
-  el.style.height = Math.max(44, el.scrollHeight) + 'px'
 }
 
 /* ===== Notes ===== */
 const notes = ref([])
 const newNote = ref('')
-const notesTextareaEl = ref(null)
 let currentUserId = null
 
 async function addNote() {
@@ -314,7 +301,6 @@ async function addNote() {
   }
   notes.value.push(data)
   newNote.value = ''
-  nextTick(() => resizeNotesTextarea())
 }
 
 const editingNoteId = ref(null)
@@ -357,12 +343,6 @@ function handleNoteEnter(e) {
   addNote()
 }
 
-function resizeNotesTextarea() {
-  const el = notesTextareaEl.value
-  if (!el) return
-  el.style.height = 'auto'
-  el.style.height = Math.max(44, el.scrollHeight) + 'px'
-}
 
 /* ===== Backlog delete + Toast ===== */
 const toast = reactive({ show: false, message: '' })
@@ -512,7 +492,9 @@ onBeforeUnmount(() => clearTimeout(toastTimer))
   line-height: var(--typography-body-line-height);
   padding: 0;
   padding-right: 36px;
-  min-height: 60px;
+  overflow-y: hidden;
+  min-height: unset;
+  height: auto;
 }
 
 .note-text {

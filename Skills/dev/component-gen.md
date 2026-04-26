@@ -80,6 +80,38 @@ Props：
 - disabled：opacity 50%，pointer-events: none
 ```
 
+#### `LoadingDots.vue`
+```
+Props：無
+規格：
+
+- 三個圓點上下起伏動畫
+- 圓點尺寸：6×6px，圓形
+- 顏色：var(--text-primary)，opacity 0.4→1
+- Gap：6px
+- 動畫：dotBounce 0.8s ease-in-out infinite，三點 delay 0s / 0.2s / 0.4s
+- 用途：頁面載入中狀態（取代純文字「載入中...」）
+```
+#### `ConfirmDialog.vue`
+```
+Props：
+- modelValue: boolean（控制顯示/隱藏，v-model）
+- message: string（預設「確定刪除？」）
+
+Emits：
+- update:modelValue
+- confirm
+
+規格：
+- 使用 Teleport to="body"
+- 背景遮罩：rgba(0,0,0,0.2)
+- Dialog：白色背景，圓角 20px，padding 24px，寬度 280px
+- 文字：2.0rem，Regular，text/primary，置中
+- 按鈕區：grid 兩欄，gap 12px
+- 取消按鈕：漸層外框（雙層結構），文字 text/primary，背景白色，圓角 12px，高度 40px
+- 刪除按鈕：漸層背景，文字白色，圓角 12px，高度 40px
+```
+
 #### `BaseCard.vue`
 ```
 Props：
