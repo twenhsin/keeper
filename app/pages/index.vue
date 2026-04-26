@@ -357,6 +357,8 @@ function resizeTextarea() {
 
 function handleInputKeyDown(e) {
   if (e.key !== 'Enter') return
+  // 手機版不用 Enter 送出，只用送出按鈕
+  if (window.matchMedia('(max-width: 767px)').matches) return
   if (e.shiftKey || e.metaKey || e.ctrlKey) return
   e.preventDefault()
   sendMessage()
