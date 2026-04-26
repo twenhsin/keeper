@@ -55,9 +55,20 @@
             :opacity="80"
             class="backlog-card"
           >
-            <span class="backlog-title">{{ item.title }}</span>
-            <button class="delete-btn" type="button" @click="confirmDelete(() => deleteBacklog(item.id))">
-              <X :size="20" :stroke-width="2" />
+            <textarea
+              v-if="editingBacklogId === item.id"
+              v-model="editingBacklogTitle"
+              class="edit-textarea"
+              @keydown.enter.exact.prevent="saveEditBacklog(item)"
+            />
+            <span v-else class="backlog-title" @click="startEditBacklog(item)">{{ item.title }}</span>
+            <button
+              class="delete-btn"
+              type="button"
+              @click="editingBacklogId === item.id ? saveEditBacklog(item) : confirmDelete(() => deleteBacklog(item.id))"
+            >
+              <Save v-if="editingBacklogId === item.id" :size="20" :stroke-width="2" />
+              <Trash2 v-else :size="20" :stroke-width="2" />
             </button>
           </BaseCard>
           <p v-if="plansData.backlog.length === 0" class="empty-hint">尚無計畫</p>
@@ -65,16 +76,21 @@
 
         <!-- Notes：內容 + 垃圾桶 -->
         <template v-else-if="activeTab === 'notes'">
-          <BaseCard
-            v-for="note in notes"
-            :key="note.id"
-            padding="sm"
-            :opacity="80"
-            class="backlog-card"
-          >
-            <span class="note-text">{{ note.content }}</span>
-            <button class="delete-btn" type="button" @click="confirmDelete(() => deleteNote(note.id))">
-              <X :size="20" :stroke-width="2" />
+          <BaseCard v-for="note in notes" :key="note.id" padding="sm" :opacity="80" class="backlog-card">
+            <textarea
+              v-if="editingNoteId === note.id"
+              v-model="editingNoteContent"
+              class="edit-textarea"
+              @keydown.enter.exact.prevent="saveEditNote(note)"
+            />
+            <span v-else class="note-text" @click="startEditNote(note)">{{ note.content }}</span>
+            <button
+              class="delete-btn"
+              type="button"
+              @click="editingNoteId === note.id ? saveEditNote(note) : confirmDelete(() => deleteNote(note.id))"
+            >
+              <Save v-if="editingNoteId === note.id" :size="20" :stroke-width="2" />
+              <Trash2 v-else :size="20" :stroke-width="2" />
             </button>
           </BaseCard>
           <p v-if="notes.length === 0" class="empty-hint">還沒有任何 notes</p>
@@ -151,7 +167,7 @@
 
 <script setup>
 import { ref, reactive, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
-import { X } from 'lucide-vue-next'
+import { Trash2, Save } from 'lucide-vue-next'
 
 const supabase = useSupabaseClient()
 
@@ -186,10 +202,11 @@ onMounted(async () => {
   }
   currentUserId = user.id
 
-  const [habitsRes, longtermRes, notesRes] = await Promise.all([
+  const [habitsRes, longtermRes, notesRes, backlogRes] = await Promise.all([
     supabase.from('habits').select('id, title, description, is_active, card_mode').eq('user_id', user.id).order('created_at', { ascending: true }),
     supabase.from('plans').select('id, title, description, is_active').eq('user_id', user.id).order('created_at', { ascending: true }),
-    supabase.from('notes').select('id, content').eq('user_id', user.id).order('created_at', { ascending: true })
+    supabase.from('notes').select('id, content').eq('user_id', user.id).order('created_at', { ascending: true }),
+    supabase.from('backlog').select('id, title').eq('user_id', user.id).order('created_at', { ascending: true })
   ])
 
   if (habitsRes.data) {
@@ -200,6 +217,9 @@ onMounted(async () => {
   }
   if (notesRes.data) {
     notes.value = notesRes.data
+  }
+  if (backlogRes.data) {
+    plansData.backlog = backlogRes.data.map(r => ({ id: r.id, title: r.title }))
   }
 
   loading.value = false
@@ -212,10 +232,48 @@ const selectedPlan = ref(null)
 const newWishTitle = ref('')
 const backlogTextareaEl = ref(null)
 
-function addToBacklog() {
+const editingBacklogId = ref(null)
+const editingBacklogTitle = ref('')
+
+function startEditBacklog(item) {
+  editingBacklogId.value = item.id
+  editingBacklogTitle.value = item.title
+}
+
+async function saveEditBacklog(item) {
+  const title = editingBacklogTitle.value.trim()
+  if (!title) return
+  const { error } = await supabase
+    .from('backlog')
+    .update({ title })
+    .eq('id', item.id)
+  if (error) {
+    showToastMsg('更新失敗，請再試一次')
+    return
+  }
+  item.title = title
+  editingBacklogId.value = null
+  editingBacklogTitle.value = ''
+}
+
+async function addToBacklog() {
   const title = newWishTitle.value.trim()
   if (!title) return
-  plansData.backlog.push({ id: Date.now(), title })
+  if (!currentUserId) {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    currentUserId = user.id
+  }
+  const { data, error } = await supabase
+    .from('backlog')
+    .insert({ user_id: currentUserId, title })
+    .select('id, title')
+    .single()
+  if (error) {
+    showToastMsg('新增失敗，請再試一次')
+    return
+  }
+  plansData.backlog.push({ id: data.id, title: data.title })
   newWishTitle.value = ''
   nextTick(() => resizeBacklogTextarea())
   showToastMsg('新增一則計畫')
@@ -259,6 +317,30 @@ async function addNote() {
   nextTick(() => resizeNotesTextarea())
 }
 
+const editingNoteId = ref(null)
+const editingNoteContent = ref('')
+
+function startEditNote(note) {
+  editingNoteId.value = note.id
+  editingNoteContent.value = note.content
+}
+
+async function saveEditNote(note) {
+  const content = editingNoteContent.value.trim()
+  if (!content) return
+  const { error } = await supabase
+    .from('notes')
+    .update({ content })
+    .eq('id', note.id)
+  if (error) {
+    showToastMsg('更新失敗，請再試一次')
+    return
+  }
+  note.content = content
+  editingNoteId.value = null
+  editingNoteContent.value = ''
+}
+
 async function deleteNote(id) {
   const { error } = await supabase.from('notes').delete().eq('id', id)
   if (error) {
@@ -286,10 +368,15 @@ function resizeNotesTextarea() {
 const toast = reactive({ show: false, message: '' })
 let toastTimer = null
 
-function deleteBacklog(id) {
+async function deleteBacklog(id) {
+  const { error } = await supabase.from('backlog').delete().eq('id', id)
+  if (error) {
+    showToastMsg('刪除失敗，請再試一次')
+    return
+  }
   const idx = plansData.backlog.findIndex(item => item.id === id)
   if (idx !== -1) plansData.backlog.splice(idx, 1)
-  showToastMsg('刪除一則願望')
+  showToastMsg('已刪除')
 }
 
 async function deleteRemotePlan(id) {
@@ -413,6 +500,21 @@ onBeforeUnmount(() => clearTimeout(toastTimer))
   color: var(--text-primary);
 }
 
+.edit-textarea {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  font-family: inherit;
+  font-size: var(--typography-body-size);
+  color: var(--text-primary);
+  line-height: var(--typography-body-line-height);
+  padding: 0;
+  padding-right: 36px;
+  min-height: 60px;
+}
+
 .note-text {
   font-size: var(--typography-body-size);
   color: var(--text-primary);
@@ -426,7 +528,7 @@ onBeforeUnmount(() => clearTimeout(toastTimer))
   background: none;
   border: none;
   padding: 0;
-  color: var(--text-danger);
+  color: #FF7FDC;
   cursor: pointer;
   display: flex;
   align-items: center;

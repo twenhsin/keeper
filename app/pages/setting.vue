@@ -21,14 +21,11 @@
             placeholder="貼上你的 Claude API Key"
             @input="handleApiKeyInput"
           />
-          <button v-show="hasApiKeyInput && !isMaskedDisplay" class="upload-btn" type="button" @click="saveApiKey">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 15V4M12 4L8 8M12 4L16 8" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M4 17v1a2 2 0 002 2h12a2 2 0 002-2v-1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+          <button v-show="hasApiKeyInput && !isMaskedDisplay" class="icon-delete-btn" type="button" @click="saveApiKey">
+            <Save :size="18" :stroke-width="2" />
           </button>
-          <button v-show="isMaskedDisplay" class="upload-btn" type="button" @click="confirmDelete(clearApiKey)">
-            <Trash2 :size="18" :stroke-width="2" color="white" />
+          <button v-show="isMaskedDisplay" class="icon-delete-btn" type="button" @click="confirmDelete(clearApiKey)">
+            <Trash2 :size="18" :stroke-width="2" />
           </button>
         </div>
       </div>
@@ -45,12 +42,12 @@
           />
           <button
             v-show="aboutSaveState !== 'disabled'"
-            class="save-btn"
+            class="icon-delete-btn-abs"
             type="button"
             @click="aboutSaveState === 'saved' ? confirmDelete(clearAboutMe) : saveAboutMe()"
           >
-            <Trash2 v-if="aboutSaveState === 'saved'" :size="18" :stroke-width="2" color="white" />
-            <Save v-else :size="18" :stroke-width="2" color="white" />
+            <Trash2 v-if="aboutSaveState === 'saved'" :size="18" :stroke-width="2" />
+            <Save v-else :size="18" :stroke-width="2" />
           </button>
         </div>
       </div>
@@ -61,21 +58,32 @@
         <div class="ref-book-list">
           <div v-for="(book, index) in refBooks" :key="index" class="ref-book-row">
             <input
+              v-if="book.saved"
+              :value="book.editing ? book.editTitle : book.title"
+              type="text"
+              class="ref-book-input"
+              :readonly="!book.editing"
+              @focus="book.editing = true; book.editTitle = book.title"
+              @input="book.editTitle = $event.target.value"
+              @keydown.enter.prevent="saveEditRefBook(index)"
+            />
+            <input
+              v-else
               v-model="book.title"
               type="text"
               class="ref-book-input"
-              :disabled="book.saved"
               placeholder="輸入你想引用的書籍概念"
               @keydown="(e) => handleRefBookEnter(e, index)"
             />
             <button
               v-show="book.saved || book.title.trim()"
-              class="ref-book-btn"
+              :class="book.saved ? 'icon-delete-btn' : 'ref-book-btn'"
               type="button"
-              @click="book.saved ? confirmDelete(() => deleteRefBook(index)) : saveRefBook(index)"
+              @click="book.saved && book.editing ? saveEditRefBook(index) : book.saved ? confirmDelete(() => deleteRefBook(index)) : saveRefBook(index)"
             >
-              <Trash2 v-if="book.saved" :size="18" :stroke-width="2" color="white" />
-              <Save v-else :size="18" :stroke-width="2" color="white" />
+              <Save v-if="book.saved && book.editing" :size="18" :stroke-width="2" />
+              <Trash2 v-else-if="book.saved" :size="18" :stroke-width="2" />
+              <Save v-else :size="18" :stroke-width="2" />
             </button>
           </div>
         </div>
@@ -233,7 +241,7 @@ async function fetchRefBooks() {
     .eq('user_id', userId)
     .order('created_at')
 
-  refBooks.value = (data ?? []).map(r => ({ id: r.id, title: r.title, saved: true }))
+  refBooks.value = (data ?? []).map(r => ({ id: r.id, title: r.title, saved: true, editing: false, editTitle: r.title }))
   refBooks.value.push({ id: null, title: '', saved: false })
 }
 
@@ -266,6 +274,22 @@ function handleRefBookEnter(e, index) {
   if (e.shiftKey || e.metaKey || e.ctrlKey) return
   e.preventDefault()
   saveRefBook(index)
+}
+
+async function saveEditRefBook(index) {
+  const item = refBooks.value[index]
+  const title = item.editTitle.trim()
+  if (!title) return
+  const { error } = await supabase
+    .from('reference_books')
+    .update({ title })
+    .eq('id', item.id)
+  if (error) {
+    showToast('更新失敗，請再試一次')
+    return
+  }
+  refBooks.value[index].title = title
+  refBooks.value[index].editing = false
 }
 
 async function deleteRefBook(index) {
@@ -511,6 +535,38 @@ onMounted(async () => {
   justify-content: center;
 }
 
+/* 無背景刪除按鈕（inline，如 API Key、Reference Books） */
+.icon-delete-btn {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  padding: 0;
+  color: #FF7FDC;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 無背景刪除按鈕（absolute，如 About Me） */
+.icon-delete-btn-abs {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 40px;
+  height: 40px;
+  background: none;
+  border: none;
+  padding: 0;
+  color: #FF7FDC;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* ===== + 按鈕（Project） ===== */
 .add-btn {
   width: 40px;
@@ -543,7 +599,8 @@ onMounted(async () => {
   border: 1px solid var(--card-border);
   border-radius: var(--card-radius);    /* 20px */
   padding: var(--core-spacing-400);
-  padding-bottom: 60px;
+  padding-right: 48px;
+  padding-bottom: 16px;
   font-family: inherit;
   font-size: var(--typography-body-size);
   font-weight: var(--typography-body-weight);
@@ -557,23 +614,6 @@ onMounted(async () => {
 
 .about-textarea::placeholder {
   color: var(--text-placeholder);
-}
-
-.save-btn {
-  position: absolute;
-  bottom: var(--core-spacing-300); /* 12px */
-  right: var(--core-spacing-300);  /* 12px */
-  width: 40px;
-  height: 40px;
-  flex-shrink: 0;
-  background: var(--gradient-brand);
-  border: none;
-  border-radius: var(--core-radius-300); /* 12px */
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: opacity 0.2s ease;
 }
 
 /* ===== Reference Books ===== */
