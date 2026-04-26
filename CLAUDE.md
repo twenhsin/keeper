@@ -183,6 +183,21 @@ Vercel：Settings → Environment Variables 手動設定
 - ✅ weekly_summaries 資料表 + 每週摘要 Cron
 - ✅ monthly_summaries 資料表 + 每月摘要 Cron
 -  Backlog tab 串接 Supabase
+- habits 表新增欄位（required_weekdays、period_days、allow_extra、allow_makeup、daily_slots、card_show_time、notify_times）
+- records.vue 打卡卡片邏輯改用新欄位（固定卡、加分卡、週期卡、補打卡）
+- chat.post.ts taskCardsBlock 改為顯示任務名稱而非 uuid
+- chat.post.ts habitsBlock 帶入 id
+- supervisor-persona.md 新增語氣層級 0、切換邏輯、Reference Books 使用規則、建議彈性規則
+- chat.post.ts system prompt 語氣規則更新
+- LoadingDots component
+- ConfirmDialog component
+- setting.vue 輸入框互動模式（未輸入不顯示按鈕、儲存後顯示刪除按鈕）
+- plans.vue 刪除按鈕統一為 X icon、absolute 定位
+- Keeper 建立習慣命名規則（頻率在前）
+- Keeper 修改現有習慣流程（habit_update JSON + 前端 UPDATE）
+- index.vue 打卡後 Progress report 即時更新
+- Streaming 優化（reminder + chat）
+- reminder 模式減少 Supabase 查詢
 
 ### 待完成
 - [ ] pages/ui-kit.vue
@@ -200,3 +215,5 @@ Vercel：Settings → Environment Variables 手動設定
   - 3個月摘要 → 歷史總摘要（滾動壓縮）
 - [ ] AI 回饋文字（缺席補發後）
 - [ ] 計畫視覺圖
+- [ ] reminder 查詢移至前端
+- [ ] 明天測試：打卡後 Progress report 即時更新
