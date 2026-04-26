@@ -81,7 +81,7 @@ const userNotes = ref([])
 const inputText = ref('')
 const mainContentEl = ref(null)
 const textareaEl = ref(null)
-const MIN_HEIGHT = 44
+const MIN_HEIGHT = 76
 let toastTimer = null
 const abortController = ref(null)
 
@@ -440,7 +440,7 @@ function scrollToBottom() {
 .input-textarea {
   display: block;
   width: 100%;
-  min-height: 44px;
+  min-height: 76px;
   background: transparent;
   border: none;
   outline: none;
