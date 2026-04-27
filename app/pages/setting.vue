@@ -95,15 +95,40 @@
           <h2 class="section-title">Project</h2>
           <button class="add-btn" type="button" @click="triggerFileInput">+</button>
         </div>
-        <div class="file-list">
-          <FileCard
-            v-for="file in projectFiles"
-            :key="file.id"
-            :filename="file.filename"
-            :type="file.type"
-            deletable
-            @delete="deleteFile(file.id)"
+        <div v-if="projectFiles.length > 0" class="project-list">
+          <div
+            v-for="project in projectFiles"
+            :key="project.id"
+            class="project-row"
+            @click="openProjectModal(project)"
+          >
+            <div class="project-info">
+              <span class="project-filename">{{ project.filename }}</span>
+              <span class="project-date">{{ formatDate(project.created_at) }}</span>
+            </div>
+            <div class="project-actions" @click.stop>
+              <button
+                :class="['toggle-btn', { active: project.is_active }]"
+                type="button"
+                @click="toggleProject(project)"
+              />
+            </div>
+          </div>
+        </div>
+        <div class="about-wrapper">
+          <textarea
+            v-model="newProjectContent"
+            class="about-textarea"
+            placeholder="第一行將為檔案名稱"
           />
+          <button
+            v-show="newProjectContent.trim()"
+            class="icon-delete-btn-abs"
+            type="button"
+            @click="saveNewProject"
+          >
+            <Save :size="18" :stroke-width="2" />
+          </button>
         </div>
       </div>
 
@@ -124,6 +149,28 @@
       message="確定刪除？"
       @confirm="executeDelete"
     />
+
+    <!-- Project Edit Modal -->
+    <Teleport to="body">
+      <div v-if="showProjectModal" class="modal-overlay" @click.self="showProjectModal = false">
+        <div class="modal-card">
+          <div class="modal-header">
+            <h3 class="modal-title">Edit Project</h3>
+            <button class="modal-close" type="button" @click="showProjectModal = false">×</button>
+          </div>
+          <textarea v-model="editingProjectContent" class="modal-textarea" />
+          <div class="modal-footer">
+            <button class="modal-delete-btn" type="button" @click="confirmDelete(deleteProject)">刪除</button>
+            <button
+              class="modal-save-btn"
+              type="button"
+              :disabled="editingProjectContent === editingProject?.content"
+              @click="saveProjectEdit"
+            >儲存</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
 
     <!-- Toast -->
     <Transition name="toast">
@@ -312,6 +359,10 @@ async function deleteRefBook(index) {
 // ===== Project Files =====
 const projectFiles = ref([])
 const fileInputEl = ref(null)
+const newProjectContent = ref('')
+const editingProject = ref(null)
+const showProjectModal = ref(false)
+const editingProjectContent = ref('')
 
 function triggerFileInput() {
   console.log('triggerFileInput called, ref:', fileInputEl.value)
@@ -357,9 +408,9 @@ async function fetchProjectFiles() {
 
   const { data, error } = await supabase
     .from('project_files')
-    .select('id, filename, type')
+    .select('id, filename, content, is_active, created_at')
     .eq('user_id', userId)
-    .order('created_at')
+    .order('created_at', { ascending: false })
 
   if (error) {
     console.error('[project_files] fetch error:', error)
@@ -377,6 +428,69 @@ async function deleteFile(fileId) {
   if (!error) {
     projectFiles.value = projectFiles.value.filter(f => f.id !== fileId)
   }
+}
+
+async function toggleProject(project) {
+  project.is_active = !project.is_active
+  await supabase
+    .from('project_files')
+    .update({ is_active: project.is_active })
+    .eq('id', project.id)
+}
+
+async function saveNewProject() {
+  const content = newProjectContent.value.trim()
+  if (!content) return
+  const firstLine = content.split('\n')[0].trim()
+  const filename = firstLine || '未命名'
+  const { data: { user: currentUser } } = await supabase.auth.getUser()
+  const userId = currentUser?.id
+  if (!userId) return
+  const { data } = await supabase
+    .from('project_files')
+    .insert({ user_id: userId, filename, content, is_active: true, type: 'MD' })
+    .select()
+    .single()
+  projectFiles.value.unshift(data)
+  newProjectContent.value = ''
+  showToast('已儲存')
+}
+
+function openProjectModal(project) {
+  editingProject.value = { ...project }
+  editingProjectContent.value = project.content
+  showProjectModal.value = true
+}
+
+async function saveProjectEdit() {
+  await supabase
+    .from('project_files')
+    .update({ content: editingProjectContent.value })
+    .eq('id', editingProject.value.id)
+  const idx = projectFiles.value.findIndex(p => p.id === editingProject.value.id)
+  if (idx !== -1) projectFiles.value[idx].content = editingProjectContent.value
+  showProjectModal.value = false
+  showToast('已儲存')
+}
+
+async function deleteProject() {
+  await supabase
+    .from('project_files')
+    .delete()
+    .eq('id', editingProject.value.id)
+  projectFiles.value = projectFiles.value.filter(p => p.id !== editingProject.value.id)
+  showProjectModal.value = false
+  showToast('已刪除')
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return ''
+  return new Date(dateStr).toLocaleDateString('zh-TW', {
+    timeZone: 'Asia/Taipei',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  })
 }
 
 // ===== Confirm Dialog =====
@@ -670,11 +784,190 @@ onMounted(async () => {
   transition: opacity 0.2s ease;
 }
 
-/* ===== File 列表 ===== */
-.file-list {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+/* ===== Project 列表 ===== */
+.project-list {
+  display: flex;
+  flex-direction: column;
   gap: var(--spacing-gap-card);
+}
+
+.project-row {
+  display: flex;
+  align-items: center;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--core-radius-300);
+  padding: var(--core-spacing-300) var(--core-spacing-400);
+  gap: var(--core-spacing-200);
+  cursor: pointer;
+}
+
+.project-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.project-filename {
+  font-size: var(--typography-body-size);
+  font-weight: var(--typography-body-weight);
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.project-date {
+  font-size: 1.2rem;
+  color: var(--text-secondary);
+}
+
+.project-actions {
+  flex-shrink: 0;
+}
+
+/* Toggle switch */
+.toggle-btn {
+  width: 44px;
+  height: 26px;
+  border-radius: 13px;
+  border: none;
+  background: var(--card-border);
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s ease;
+  padding: 0;
+}
+
+.toggle-btn::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  transition: transform 0.2s ease;
+}
+
+.toggle-btn.active {
+  background: var(--gradient-brand);
+}
+
+.toggle-btn.active::after {
+  transform: translateX(18px);
+}
+
+/* ===== Project Modal ===== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 var(--spacing-page-x) var(--spacing-page-x);
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 800px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--card-radius);
+  padding: var(--core-spacing-500);
+  display: flex;
+  flex-direction: column;
+  gap: var(--core-spacing-400);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-title {
+  font-size: var(--typography-heading-size);
+  font-weight: var(--typography-heading-weight);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.modal-close {
+  width: 36px;
+  height: 36px;
+  background: none;
+  border: none;
+  font-size: 1.6rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+}
+
+.modal-textarea {
+  display: block;
+  width: 100%;
+  height: 500px;
+  background: transparent;
+  border: 1px solid var(--card-border);
+  border-radius: var(--core-radius-300);
+  padding: var(--core-spacing-400);
+  font-family: inherit;
+  font-size: var(--typography-body-size);
+  color: var(--text-primary);
+  resize: none;
+  outline: none;
+  overflow-y: auto;
+  box-sizing: border-box;
+  line-height: var(--typography-body-line-height);
+}
+
+.modal-footer {
+  display: flex;
+  gap: var(--core-spacing-300);
+}
+
+.modal-delete-btn {
+  flex: 1;
+  height: 48px;
+  border-radius: var(--core-radius-300);
+  background:
+    linear-gradient(var(--card-bg), var(--card-bg)) padding-box,
+    var(--gradient-brand) border-box;
+  border: 1px solid transparent;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: var(--typography-body-size);
+  font-weight: var(--typography-body-weight);
+  cursor: pointer;
+}
+
+.modal-save-btn {
+  flex: 1;
+  height: 48px;
+  border-radius: var(--core-radius-300);
+  background: var(--gradient-brand);
+  border: none;
+  color: var(--text-inverse);
+  font-family: inherit;
+  font-size: var(--typography-body-size);
+  font-weight: var(--typography-body-weight);
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.modal-save-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 /* ===== Hidden file input ===== */
@@ -721,8 +1014,9 @@ onMounted(async () => {
     bottom: 32px;
   }
 
-  .file-list {
-    grid-template-columns: repeat(6, 1fr);
+  .modal-overlay {
+    align-items: center;
+    padding: var(--spacing-page-x);
   }
 }
 </style>

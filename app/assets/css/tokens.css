@@ -23,7 +23,7 @@
   --core-color-gray-200: #E0E0E0;
   --core-color-gray-300: #D0D0D0;
   --core-color-gray-500: #868385;
-  --core-color-gray-700: #656264;
+  --core-color-gray-700: #363134;
   --core-color-white: #FFFFFF;
 
   /* --- Color: Shadow base --- */
@@ -104,7 +104,7 @@
      ========================================================== */
 
   /* --- Text Color --- */
-  --text-primary: var(--core-color-gray-700);        /* #656264 — 主要文字 */
+  --text-primary: var(--core-color-gray-700);        /* #363134 — 主要文字 */
   --text-inverse: var(--core-color-white);            /* #FFFFFF — 反白文字 */
   --text-brand: var(--core-color-brand-primary);      /* #FF7FDC — 強調數字 */
   --text-danger: var(--core-color-brand-primary);     /* #FF7FDC — 刪除 icon */
