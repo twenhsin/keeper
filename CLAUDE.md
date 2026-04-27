@@ -1,7 +1,7 @@
 # CLAUDE.md
 > Keeper 專案入口文件
 > 每次開啟專案時優先讀取此文件
-> 最後更新：2026-04-16
+> 最後更新：2026-04-27
 
 ---
 
@@ -198,10 +198,13 @@ Vercel：Settings → Environment Variables 手動設定
 - index.vue 打卡後 Progress report 即時更新
 - Streaming 優化（reminder + chat）
 - reminder 模式減少 Supabase 查詢
+- [ ] reminder 查詢移至前端
+- chat.post.ts reminder 模式 Supabase 查詢精簡（habits/plans/taskCards 移至前端傳入）
+- Notes 只在 reminder 模式讀取，chat 模式不帶入
 
 ### 待完成
 - [ ] pages/ui-kit.vue
-- [ ] Vercel Cron 推播通知
+- [ ] Vercel Cron 推播通知（「需付費方案，暫緩」）
 - [ ] 手機版 iOS Safari 鍵盤收起後底部白色空白問題
 
 ### 待辦清單（功能擴充）
@@ -214,5 +217,5 @@ Vercel：Settings → Environment Variables 手動設定
   - 3個月摘要 → 歷史總摘要（滾動壓縮）
 - [ ] AI 回饋文字（缺席補發後）
 - [ ] 計畫視覺圖
-- [ ] reminder 查詢移至前端
+- [ ] Vercel Cron 推播通知（需 Vercel 付費方案，暫緩）
 - [ ] 明天測試：打卡後 Progress report 即時更新

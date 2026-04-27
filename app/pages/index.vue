@@ -87,6 +87,7 @@ const textareaEl = ref(null)
 const MIN_HEIGHT = 76
 let toastTimer = null
 const abortController = ref(null)
+const pendingConfirm = ref(false)
 
 
 const today = new Date().toLocaleDateString('zh-TW', {
@@ -197,6 +198,7 @@ async function sendMessage() {
   resizeTextarea()
   scrollToBottom()
 
+  pendingConfirm.value = false
   abortController.value = new AbortController()
 
   try {
@@ -291,6 +293,17 @@ function stopMessage() {
 
 /* ===== 偵測 JSON → 寫入 Supabase ===== */
 async function processAssistantContent(content) {
+  const confirmKeywords = ['確認執行嗎', '這樣正確嗎', '這樣可以嗎', '確認這樣設定嗎', '是否執行']
+  const hasConfirmQuestion = confirmKeywords.some(k => content.includes(k))
+  if (hasConfirmQuestion) {
+    pendingConfirm.value = true
+    return content
+  }
+
+  if (pendingConfirm.value) {
+    return content
+  }
+
   const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/)
   if (!jsonMatch) return content
 
