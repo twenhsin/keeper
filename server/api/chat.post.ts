@@ -23,28 +23,12 @@ export default defineEventHandler(async (event) => {
   const twentyEightDaysAgo = new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString()
   const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()
 
-  const [userRes, habitsRes, plansRes, taskCardsRes, summariesRes, refBooksRes, weeklySummariesRes, monthlySummariesRes] = await Promise.all([
+  const [userRes, summariesRes, refBooksRes, weeklySummariesRes, monthlySummariesRes] = await Promise.all([
     supabase
       .from('users')
       .select('personal_summary, supervisor_style')
       .eq('id', userId)
       .single(),
-    supabase
-      .from('habits')
-      .select('id, title, description, required_weekdays, period_days, allow_extra, allow_makeup, card_show_time, notify_times, is_active, created_at')
-      .eq('user_id', userId)
-      .eq('is_active', true),
-    supabase
-      .from('plans')
-      .select('id, title, description, total_phases, current_phase, created_at')
-      .eq('user_id', userId)
-      .eq('is_active', true),
-    supabase
-      .from('task_cards')
-      .select('ref_id, task_type, scheduled_date, is_completed')
-      .eq('user_id', userId)
-      .gte('scheduled_date', sevenDaysAgo)
-      .order('scheduled_date', { ascending: false }),
     mode === 'reminder'
       ? Promise.resolve({ data: [] })
       : supabase
@@ -77,9 +61,9 @@ export default defineEventHandler(async (event) => {
 
   // ===== 組裝 System Prompt =====
   const user = userRes.data
-  const habits = habitsRes.data ?? []
-  const plans = plansRes.data ?? []
-  const taskCards = taskCardsRes.data ?? []
+  const habits: any[] = body.habits ?? []
+  const plans: any[] = body.plans ?? []
+  const taskCards: any[] = body.taskCards ?? []
   const summaries = summariesRes.data ?? []
   const refBooks = refBooksRes.data ?? []
   const weeklySummaries = weeklySummariesRes.data ?? []

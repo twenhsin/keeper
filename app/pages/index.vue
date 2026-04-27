@@ -77,6 +77,9 @@ const isChatMode = ref(false)
 const toastText = ref('')
 
 const userNotes = ref([])
+const userHabits = ref([])
+const userPlans = ref([])
+const userTaskCards = ref([])
 
 const inputText = ref('')
 const mainContentEl = ref(null)
@@ -125,20 +128,26 @@ onMounted(async () => {
     await supabase.from('users').update({ today_messages: [], messages_date: today }).eq('id', user.id)
   }
 
-  // ===== 讀取 Notes + 拉督促提醒（並行）=====
-  const notesPromise = supabase
-    .from('notes')
-    .select('id, content')
-    .eq('user_id', user.id)
+  // ===== 並行查詢四張表 =====
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
 
-  const reminderPromise = fetch('/api/chat', {
+  const [habitsRes, plansRes, taskCardsRes, notesRes] = await Promise.all([
+    supabase.from('habits').select('id, title, description, required_weekdays, period_days, allow_extra, allow_makeup, card_show_time, notify_times, is_active, created_at').eq('user_id', user.id).eq('is_active', true),
+    supabase.from('plans').select('id, title, description, total_phases, current_phase, created_at').eq('user_id', user.id).eq('is_active', true),
+    supabase.from('task_cards').select('ref_id, task_type, scheduled_date, is_completed').eq('user_id', user.id).gte('scheduled_date', sevenDaysAgo).order('scheduled_date', { ascending: false }),
+    supabase.from('notes').select('id, content').eq('user_id', user.id)
+  ])
+
+  userHabits.value = habitsRes.data ?? []
+  userPlans.value = plansRes.data ?? []
+  userTaskCards.value = taskCardsRes.data ?? []
+  userNotes.value = notesRes.data ?? []
+
+  const reminderRes = await fetch('/api/chat', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ mode: 'reminder', messages: [], userId: userId.value, apiKey: apiKey.value, notes: [] })
+    body: JSON.stringify({ mode: 'reminder', messages: [], userId: userId.value, apiKey: apiKey.value, notes: userNotes.value, habits: userHabits.value, plans: userPlans.value, taskCards: userTaskCards.value })
   })
-
-  const [notesRes, reminderRes] = await Promise.all([notesPromise, reminderPromise])
-  userNotes.value = notesRes.data ?? []
 
   if (!reminderRes.ok) {
     reminderText.value = reminderRes.status === 401 ? '請先至 Setting 設定有效的 Claude API Key' : '無法載入提醒，請稍後再試'
@@ -200,7 +209,10 @@ async function sendMessage() {
         messages: messages.value.map(m => ({ role: m.role, content: m.content })),
         userId: userId.value,
         apiKey: apiKey.value,
-        notes: userNotes.value
+        notes: [],
+        habits: userHabits.value,
+        plans: userPlans.value,
+        taskCards: userTaskCards.value
       })
     })
 
