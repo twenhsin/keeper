@@ -19,7 +19,7 @@
             class="card-btn"
             type="button"
             aria-label="Delete"
-            @click.stop="deleteCard(i)"
+            @click.stop="requestDelete(i)"
           >
             <Trash2 :size="18" />
           </button>
@@ -57,31 +57,103 @@
         </div>
       </div>
     </div>
+
+    <ConfirmDialog v-model="showConfirm" message="確定刪除這則 Quote？" @confirm="confirmDelete" />
+
+    <Teleport to="body">
+      <div v-if="toastText" class="toast">{{ toastText }}</div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue'
+import { ref, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { Save, Trash2 } from 'lucide-vue-next'
+
+const supabase = useSupabaseClient()
 
 const isComposing = ref(false)
 const inputText = ref('')
 const textareaEl = ref(null)
 const cardRefs = []
 const MIN_HEIGHT = 24
-let nextId = 3
 
-const quotes = ref([
-  { id: 1, text: '成功不是終點，失敗也不是終結，唯有繼續前進的勇氣才最重要。', editing: false },
-  { id: 2, text: '每一天都是一個新的機會，讓自己變得更好。', editing: false }
-])
+const userId = ref('')
+const quotes = ref([])
+const showConfirm = ref(false)
+const pendingDeleteIndex = ref(-1)
+const toastText = ref('')
+let toastTimer = null
 
-function addQuote() {
-  const text = inputText.value.trim()
-  if (!text) return
-  quotes.value.unshift({ id: nextId++, text, editing: false })
+onMounted(async () => {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+  userId.value = user.id
+
+  const { data } = await supabase
+    .from('quotes')
+    .select('id, content, created_at')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+
+  quotes.value = (data ?? []).map(q => ({ id: q.id, text: q.content, editing: false }))
+})
+
+onBeforeUnmount(() => clearTimeout(toastTimer))
+
+async function addQuote() {
+  const content = inputText.value.trim()
+  if (!content || !userId.value) return
+
+  const { data, error } = await supabase
+    .from('quotes')
+    .insert({ user_id: userId.value, content })
+    .select('id, content, created_at')
+    .single()
+
+  if (error || !data) return
+
+  quotes.value.unshift({ id: data.id, text: data.content, editing: false })
   inputText.value = ''
   nextTick(resizeTextarea)
+  showToast('已儲存')
+}
+
+function requestDelete(i) {
+  pendingDeleteIndex.value = i
+  showConfirm.value = true
+}
+
+async function confirmDelete() {
+  const i = pendingDeleteIndex.value
+  if (i === -1) return
+  const quote = quotes.value[i]
+
+  const { error } = await supabase
+    .from('quotes')
+    .delete()
+    .eq('id', quote.id)
+    .eq('user_id', userId.value)
+
+  if (error) return
+  quotes.value.splice(i, 1)
+  pendingDeleteIndex.value = -1
+}
+
+async function saveCard(i) {
+  const quote = quotes.value[i]
+  const content = quote.text.trim()
+  if (!content) return
+
+  const { error } = await supabase
+    .from('quotes')
+    .update({ content })
+    .eq('id', quote.id)
+    .eq('user_id', userId.value)
+
+  if (error) return
+  quotes.value[i].text = content
+  quotes.value[i].editing = false
 }
 
 function startEdit(i) {
@@ -90,12 +162,10 @@ function startEdit(i) {
   nextTick(() => cardRefs[i]?.focus())
 }
 
-function saveCard(i) {
-  quotes.value[i].editing = false
-}
-
-function deleteCard(i) {
-  quotes.value.splice(i, 1)
+function showToast(text) {
+  toastText.value = text
+  clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => { toastText.value = '' }, 2500)
 }
 
 function resizeTextarea() {
@@ -252,5 +322,22 @@ function handleInputKeyDown(e) {
   align-items: center;
   justify-content: center;
   color: var(--text-inverse);
+}
+
+/* ===== Toast ===== */
+.toast {
+  position: fixed;
+  top: 24px;
+  left: var(--spacing-page-x);
+  right: var(--spacing-page-x);
+  z-index: 300;
+  background: var(--gradient-brand);
+  color: var(--text-inverse);
+  border-radius: var(--radius-toast);
+  padding: var(--core-spacing-300) var(--core-spacing-600);
+  font-size: var(--typography-body-size);
+  font-weight: var(--typography-body-weight);
+  text-align: center;
+  pointer-events: none;
 }
 </style>
