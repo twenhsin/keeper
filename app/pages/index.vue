@@ -406,11 +406,16 @@ function scrollToBottom() {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  justify-content: flex-end;
 }
 
 /* ===== 聊天區（可捲動） ===== */
 .page-content {
-  flex: 1;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
@@ -447,13 +452,11 @@ function scrollToBottom() {
   margin: 0;
 }
 
-/* ===== Input 區（absolute，相對於 .page 定位） ===== */
+/* ===== Input 區 ===== */
 .input-section {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  flex-shrink: 0;
   z-index: 50;
+  padding-bottom: 24px;
 }
 
 /* 外層：漸層背景 + border + shadow + 8px padding */
