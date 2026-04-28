@@ -111,7 +111,10 @@ body {
 <style scoped>
 .layout {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100dvh;
   padding: 24px;
   display: flex;
   flex-direction: column;

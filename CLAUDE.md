@@ -211,6 +211,16 @@ Vercel：Settings → Environment Variables 手動設定
 - ✅ index.vue 注音 Enter 誤送出修正
 - ✅ index.vue 誤送出後輸入框文字殘留修正
 - ✅ index.vue 輸入框遮住對話修正
+- ✅ 全站 Layout 重構（default.vue + index.vue 採用 flex column 結構）
+- ✅ index.vue 輸入框定位修正（flex 沉底，移除 absolute 與 justify-content）
+- ✅ index.vue 輸入框結構調整（textarea 預設一行、操作區永久保留位置）
+- ✅ Setting 頁 Info icon tooltip
+- ✅ Setting 頁 Project 區塊重構（條列 + Toggle + 彈窗編輯）
+- ✅ project_files 新增 is_active 欄位
+- ✅ 主要文字色更新為 #363134
+- ✅ Keeper 任務確認兩層保護（pendingConfirm + system prompt）
+- ✅ index.vue 注音 Enter 誤送出修正
+- ✅ index.vue 誤送出後輸入框文字殘留修正
 
 ### 待完成
 - [ ] pages/ui-kit.vue
