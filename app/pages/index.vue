@@ -6,7 +6,17 @@
         <!-- 督促提醒文字（非對話模式） -->
         <template v-if="!isChatMode">
           <LoadingDots v-if="isLoadingReminder" />
-          <p v-else class="ai-reminder">{{ reminderText }}</p>
+          <div v-else class="ai-reminder">
+            <template v-for="(seg, si) in reminderSegments" :key="si">
+              <span v-if="seg.type === 'text'">{{ seg.content }}</span>
+              <div v-else class="quote-block">
+                <span class="quote-text">{{ seg.content }}</span>
+                <button class="quote-heart" type="button" aria-label="收藏" @click="saveQuote(seg.content)">
+                  <Heart :size="24" :stroke-width="1.5" />
+                </button>
+              </div>
+            </template>
+          </div>
         </template>
 
         <!-- 對話訊息列表（對話模式） -->
@@ -61,8 +71,8 @@
 </template>
 
 <script setup>
-import { ref, nextTick, onMounted, onBeforeUnmount } from 'vue'
-import { ArrowUp, Square } from 'lucide-vue-next'
+import { ref, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import { ArrowUp, Square, Heart } from 'lucide-vue-next'
 
 const supabase = useSupabaseClient()
 
@@ -365,6 +375,32 @@ async function processAssistantContent(content) {
   }
 }
 
+/* ===== reminder 解析（[QUOTE]...[/QUOTE] → 收藏區塊） ===== */
+const reminderSegments = computed(() => {
+  const text = reminderText.value
+  const segments = []
+  const regex = /\[QUOTE\]([\s\S]*?)\[\/QUOTE\]/g
+  let lastIndex = 0
+  let match
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      segments.push({ type: 'text', content: text.slice(lastIndex, match.index) })
+    }
+    segments.push({ type: 'quote', content: match[1].trim() })
+    lastIndex = match.index + match[0].length
+  }
+  if (lastIndex < text.length) {
+    segments.push({ type: 'text', content: text.slice(lastIndex) })
+  }
+  return segments
+})
+
+async function saveQuote(content) {
+  if (!userId.value) return
+  const { error } = await supabase.from('quotes').insert({ user_id: userId.value, content })
+  if (!error) showToast('已收藏')
+}
+
 /* ===== Toast ===== */
 function showToast(text) {
   toastText.value = text
@@ -437,6 +473,8 @@ function scrollToBottom() {
   color: var(--text-primary);
   margin: 0;
   white-space: pre-line;
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 /* AI 訊息（無氣泡） */
@@ -446,6 +484,33 @@ function scrollToBottom() {
   line-height: var(--typography-body-line-height);
   color: var(--text-primary);
   margin: 0;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* ===== Quote 收藏區塊 ===== */
+.quote-block {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 6px 0;
+}
+
+.quote-text {
+  flex: 1;
+  font-style: italic;
+}
+
+.quote-heart {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  color: #FF7FDC;
+  display: flex;
+  align-items: center;
+  line-height: 1;
 }
 
 /* ===== Input 區 ===== */
