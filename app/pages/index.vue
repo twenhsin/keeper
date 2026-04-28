@@ -221,7 +221,7 @@ async function sendMessage() {
     })
 
     if (!res.ok) {
-      const errData = await res.json().catch(() => ({}))
+      await res.json().catch(() => {})
       if (res.status === 401) {
         messages.value.push({ role: 'assistant', content: '請先至 Setting 設定有效的 Claude API Key' })
       } else {
@@ -413,7 +413,7 @@ function scrollToBottom() {
   flex: 1;
   overflow-y: auto;
   min-height: 0;
-  padding: 32px 0 0;
+  padding: 48px 0 80px;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
