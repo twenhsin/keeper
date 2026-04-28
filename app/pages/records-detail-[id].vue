@@ -1,14 +1,9 @@
 <template>
-  <div class="page">
-    <BottomNav active="records" />
+  <div class="page-header">
+    <PageHeader title="Records" :show-back="true" back-to="/records" />
+  </div>
 
-    <!-- Fixed PageHeader with back arrow -->
-    <div class="header-wrapper">
-      <PageHeader title="Records" :show-back="true" back-to="/records" />
-    </div>
-
-    <!-- Scrollable Content -->
-    <div class="main-content">
+  <div class="page-content">
 
       <!-- ===== id=1：習慣任務 detail ===== -->
       <template v-if="id === '1'">
@@ -138,7 +133,6 @@
         </BaseCard>
       </template>
 
-    </div>
   </div>
 </template>
 
@@ -148,36 +142,21 @@ const id = route.params.id
 </script>
 
 <style scoped>
-/* ===== 頁面容器 ===== */
-.page {
-  height: 100dvh;
-}
-
-/* ===== Fixed PageHeader ===== */
-/* padding-top 40px + h1 38px = 78px；content top = 78 + 32 = 110px */
-.header-wrapper {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
-  padding: var(--spacing-page-top) var(--spacing-page-x) 0;
-  background: transparent;
+/* ===== PageHeader 區 ===== */
+.page-header {
+  flex-shrink: 0;
+  padding-top: 8px;
 }
 
 /* ===== 主內容捲動區 ===== */
-.main-content {
-  position: fixed;
-  top: 110px;
-  bottom: 90px;
-  left: 0;
-  right: 0;
-  padding: 0 var(--spacing-page-x) var(--spacing-page-x);
+.page-content {
+  flex: 1;
   overflow-y: auto;
+  padding: 16px 0 24px;
   scrollbar-width: none;
 }
 
-.main-content::-webkit-scrollbar {
+.page-content::-webkit-scrollbar {
   display: none;
 }
 
@@ -280,17 +259,4 @@ const id = route.params.id
   background: var(--ui-checkbox-miss);
 }
 
-/* ===== Desktop (≥ 768px) ===== */
-@media (min-width: 768px) {
-  .header-wrapper {
-    left: max(80px, calc(80px + (100vw - 880px) / 2));
-    right: max(0px, calc((100vw - 880px) / 2));
-  }
-
-  .main-content {
-    left: max(80px, calc(80px + (100vw - 880px) / 2));
-    right: max(0px, calc((100vw - 880px) / 2));
-    bottom: 32px;
-  }
-}
 </style>

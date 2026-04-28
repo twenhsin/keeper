@@ -1,18 +1,19 @@
 <template>
-  <div class="page">
-    <BottomNav active="setting" />
+  <div class="page-header">
+    <PageHeader title="Setting" />
+  </div>
 
-    <!-- Fixed PageHeader -->
-    <div class="header-wrapper">
-      <PageHeader title="Setting" />
-    </div>
-
-    <!-- Scrollable Content -->
-    <div class="main-content">
+  <div class="page-content">
 
       <!-- 區塊一：Claude API KEY -->
       <div class="section">
-        <h2 class="section-title">Claude API KEY</h2>
+        <div class="section-title-row">
+          <h2 class="section-title">Claude API KEY</h2>
+          <button class="info-trigger" type="button" @click.stop="toggleInfo('apikey')">
+            <Info :size="16" />
+            <span v-if="activeInfo === 'apikey'" class="info-tooltip">輸入你的 Claude API Key，啟動 Keeper AI 督導功能。</span>
+          </button>
+        </div>
         <div class="api-box">
           <input
             v-model="apiKeyInput"
@@ -32,7 +33,13 @@
 
       <!-- 區塊二：About Me -->
       <div class="section">
-        <h2 class="section-title">About Me</h2>
+        <div class="section-title-row">
+          <h2 class="section-title">About Me</h2>
+          <button class="info-trigger" type="button" @click.stop="toggleInfo('aboutme')">
+            <Info :size="16" />
+            <span v-if="activeInfo === 'aboutme'" class="info-tooltip">描述你的個人狀態、特質與當前面臨的問題，讓 Keeper 更了解你，提供更準確的督促。</span>
+          </button>
+        </div>
         <div class="about-wrapper">
           <textarea
             v-model="aboutMe"
@@ -54,7 +61,13 @@
 
       <!-- 區塊三：Reference Books -->
       <div class="section">
-        <h2 class="section-title">Reference Books</h2>
+        <div class="section-title-row">
+          <h2 class="section-title">Reference Books</h2>
+          <button class="info-trigger" type="button" @click.stop="toggleInfo('refbooks')">
+            <Info :size="16" />
+            <span v-if="activeInfo === 'refbooks'" class="info-tooltip">輸入你想引入的書籍，Keeper 會在適當時機擷取書中概念，協助你透過認知改變行為。</span>
+          </button>
+        </div>
         <div class="ref-book-list">
           <div v-for="(book, index) in refBooks" :key="index" class="ref-book-row">
             <input
@@ -92,7 +105,13 @@
       <!-- 區塊四：Project -->
       <div class="section">
         <div class="section-header">
-          <h2 class="section-title">Project</h2>
+          <div class="section-title-row">
+            <h2 class="section-title">Project</h2>
+            <button class="info-trigger" type="button" @click.stop="toggleInfo('project')">
+              <Info :size="16" />
+              <span v-if="activeInfo === 'project'" class="info-tooltip">上傳 Markdown、TXT 檔案，或直接輸入文字，記錄你正在執行的計畫與當前狀態。例如：健康計畫的現況、心態調整的困境、工作專案的進度。</span>
+            </button>
+          </div>
           <button class="add-btn" type="button" @click="triggerFileInput">+</button>
         </div>
         <div v-if="projectFiles.length > 0" class="project-list">
@@ -176,12 +195,11 @@
     <Transition name="toast">
       <div v-if="toastMsg" class="toast">{{ toastMsg }}</div>
     </Transition>
-  </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { Save, Check, Trash2 } from 'lucide-vue-next'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { Save, Check, Trash2, Info } from 'lucide-vue-next'
 
 definePageMeta({ middleware: 'setting' })
 
@@ -493,6 +511,19 @@ function formatDate(dateStr) {
   })
 }
 
+// ===== Info Panel =====
+const activeInfo = ref(null)
+
+function toggleInfo(section) {
+  activeInfo.value = activeInfo.value === section ? null : section
+}
+
+function closeInfo(e) {
+  if (!e.target.closest('.info-trigger')) {
+    activeInfo.value = null
+  }
+}
+
 // ===== Confirm Dialog =====
 const showConfirm = ref(false)
 const pendingDelete = ref(null)
@@ -519,8 +550,13 @@ function showToast(msg) {
   toastTimer = setTimeout(() => { toastMsg.value = '' }, 3000)
 }
 
+onBeforeUnmount(() => {
+  document.removeEventListener('click', closeInfo)
+})
+
 // ===== Init =====
 onMounted(async () => {
+  document.addEventListener('click', closeInfo)
   // API Key
   const stored = localStorage.getItem('keeper_api_key')
   if (stored) {
@@ -552,35 +588,21 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* ===== 頁面容器 ===== */
-.page {
-  height: 100dvh;
-}
-
-/* ===== Fixed PageHeader ===== */
-.header-wrapper {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
-  padding: var(--spacing-page-top) var(--spacing-page-x) 0;
-  background: transparent;
+/* ===== PageHeader 區 ===== */
+.page-header {
+  flex-shrink: 0;
+  padding-top: 8px;
 }
 
 /* ===== 主內容捲動區 ===== */
-.main-content {
-  position: fixed;
-  top: 110px;
-  bottom: 90px;
-  left: 0;
-  right: 0;
-  padding: 0 var(--spacing-page-x) var(--spacing-page-x);
+.page-content {
+  flex: 1;
   overflow-y: auto;
+  padding: 16px 0 24px;
   scrollbar-width: none;
 }
 
-.main-content::-webkit-scrollbar {
+.page-content::-webkit-scrollbar {
   display: none;
 }
 
@@ -607,6 +629,48 @@ onMounted(async () => {
   line-height: var(--typography-heading-line-height);
   color: var(--text-primary);
   margin: 0;
+}
+
+.section-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.info-trigger {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--text-placeholder);
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.info-tooltip {
+  position: absolute;
+  left: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: white;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-size: 1.4rem;
+  color: var(--text-placeholder);
+  white-space: nowrap;
+  box-shadow: 0 0 16px rgba(122, 64, 153, 0.1);
+  z-index: 50;
+  pointer-events: none;
+}
+
+@media (max-width: 767px) {
+  .info-tooltip {
+    white-space: normal;
+    width: 240px;
+  }
 }
 
 /* ===== Claude API KEY ===== */
@@ -1003,20 +1067,13 @@ onMounted(async () => {
 
 /* ===== Desktop (≥ 768px) ===== */
 @media (min-width: 768px) {
-  .header-wrapper {
-    left: max(80px, calc(80px + (100vw - 880px) / 2));
-    right: max(0px, calc((100vw - 880px) / 2));
-  }
-
-  .main-content {
-    left: max(80px, calc(80px + (100vw - 880px) / 2));
-    right: max(0px, calc((100vw - 880px) / 2));
-    bottom: 32px;
-  }
-
   .modal-overlay {
     align-items: center;
     padding: var(--spacing-page-x);
+  }
+
+  .info-tooltip {
+    max-width: calc(100vw - 128px - 48px);
   }
 }
 </style>

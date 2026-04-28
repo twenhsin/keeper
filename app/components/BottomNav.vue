@@ -35,13 +35,9 @@ const navItems = [
 </script>
 
 <style scoped>
-/* ===== Mobile: 底部浮動導覽列 ===== */
+/* ===== Mobile: 底部 nav（DOM 順序排最後，自然沉底） ===== */
 .bottom-nav {
-  position: fixed;
-  bottom: 24px;
-  left: 0;
-  right: 0;
-  z-index: 100;
+  flex-shrink: 0;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -100,22 +96,18 @@ const navItems = [
   mask-composite: exclude;
 }
 
-/* ===== Desktop (≥ 768px): 左側浮動 Sidebar ===== */
+/* ===== Desktop (≥ 768px): 左側 Sidebar ===== */
 @media (min-width: 768px) {
-  /* Sidebar 容器：上下左各 24px，高度 calc(100dvh - 48px) */
   .bottom-nav {
-    top: 24px;
-    bottom: 24px;
-    left: 24px;
-    right: auto;
+    order: 1; /* 視覺上移到 main-wrap 左側 */
     width: 80px;
-    /* height 由 top + bottom 自動計算 = 100dvh - 48px */
+    flex-shrink: 0;
+    height: 100%;
     border-radius: 16px;
     background: rgba(255, 255, 255, 0.8);
     padding: 0;
-    /* 作為 nav-group 絕對定位的 containing block */
     display: block;
-    position: fixed;
+    position: relative; /* nav-group 絕對定位的 containing block */
   }
 
   /* nav-group：絕對定位，上下左右置中於 sidebar */

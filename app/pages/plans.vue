@@ -1,11 +1,7 @@
 <template>
-  <div class="page">
-    <BottomNav active="plans" />
-
-    <!-- Fixed PageHeader（含 tabs slot） -->
-    <div class="header-wrapper">
-      <PageHeader title="Plans">
-        <template #tabs>
+  <div class="page-header">
+    <PageHeader title="Plans">
+      <template #tabs>
           <div class="tabs">
             <button
               v-for="tab in tabs"
@@ -20,10 +16,9 @@
           </div>
         </template>
       </PageHeader>
-    </div>
+  </div>
 
-    <!-- Scrollable Content -->
-    <div class="main-content">
+  <div class="page-content">
 
       <!-- 清單區 -->
       <div class="plan-list">
@@ -159,7 +154,6 @@
     <Teleport to="body">
       <div v-if="toast.show" class="toast">{{ toast.message }}</div>
     </Teleport>
-  </div>
 </template>
 
 <script setup>
@@ -399,45 +393,21 @@ onBeforeUnmount(() => clearTimeout(toastTimer))
 </script>
 
 <style scoped>
-/* ===== 頁面容器 ===== */
-.page {
-  height: 100dvh;
-}
-
-/* ===== Fixed PageHeader ===== */
-/*
-  padding-top 40px + h1 (3.2rem × 1.2) ≈ 38px = 78px total wrapper height
-  content top = 78px + 32px gap = 110px
-*/
-.header-wrapper {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
-  padding: var(--spacing-page-top) var(--spacing-page-x) 0;
-  background: transparent;
+/* ===== PageHeader 區 ===== */
+.page-header {
+  flex-shrink: 0;
+  padding-top: 8px;
 }
 
 /* ===== 主內容捲動區 ===== */
-/*
-  top: 160px（header 128px + gap 32px）
-    128px = padding-top 40px + h1 38px + gap 16px + tab 34px
-  bottom: 90px（BottomNav top 58px + gap 32px）
-  padding-bottom: 140px（為 backlog/notes 輸入框預留空間）
-*/
-.main-content {
-  position: fixed;
-  top: 160px;
-  bottom: 90px;
-  left: 0;
-  right: 0;
-  padding: 0 var(--spacing-page-x) 140px;
+.page-content {
+  flex: 1;
   overflow-y: auto;
+  padding: 16px 0 24px;
   scrollbar-width: none;
 }
 
-.main-content::-webkit-scrollbar {
+.page-content::-webkit-scrollbar {
   display: none;
 }
 
@@ -570,16 +540,6 @@ onBeforeUnmount(() => clearTimeout(toastTimer))
   white-space: pre-line;
 }
 
-/* ===== Backlog / Notes 輸入框 ===== */
-/* bottom: 74px（BottomNav top 58px + gap 16px） */
-.backlog-input-section {
-  position: fixed;
-  bottom: 74px;
-  left: var(--spacing-page-x);
-  right: var(--spacing-page-x);
-  z-index: 50;
-}
-
 .input-outer {
   background: linear-gradient(to right, #F4EED1, #F8E3DA, #DBE7F7);
   border-radius: 24px;
@@ -638,35 +598,4 @@ onBeforeUnmount(() => clearTimeout(toastTimer))
   pointer-events: none;
 }
 
-/* ===== Desktop (≥ 768px) ===== */
-@media (min-width: 768px) {
-  /*
-    置中於 sidebar 右側空間（100vw - 80px），max-width 800px：
-    left = 80px + max(0, (100vw - 880px) / 2)
-    right = max(0, (100vw - 880px) / 2)
-  */
-  .header-wrapper {
-    left: max(80px, calc(80px + (100vw - 880px) / 2));
-    right: max(0px, calc((100vw - 880px) / 2));
-  }
-
-  .main-content {
-    left: max(80px, calc(80px + (100vw - 880px) / 2));
-    right: max(0px, calc((100vw - 880px) / 2));
-    bottom: 32px;
-    padding-bottom: 140px;
-  }
-
-  /* 對話框：content 邊界再內縮 page-x */
-  .backlog-input-section {
-    bottom: 32px;
-    left: calc(max(80px, calc(80px + (100vw - 880px) / 2)) + var(--spacing-page-x));
-    right: calc(max(0px, calc((100vw - 880px) / 2)) + var(--spacing-page-x));
-  }
-
-  .toast {
-    left: max(calc(80px + var(--spacing-page-x)), calc((100vw - 672px) / 2));
-    right: max(var(--spacing-page-x), calc((100vw - 832px) / 2));
-  }
-}
 </style>

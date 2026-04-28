@@ -1,14 +1,9 @@
 <template>
-  <div class="page">
-    <BottomNav active="records" />
+  <div class="page-header">
+    <PageHeader title="Records" />
+  </div>
 
-    <!-- Fixed PageHeader -->
-    <div class="header-wrapper">
-      <PageHeader title="Records" />
-    </div>
-
-    <!-- Scrollable Content -->
-    <div class="main-content">
+  <div class="page-content">
       <!-- 載入中 -->
       <LoadingDots v-if="loading" />
 
@@ -78,7 +73,6 @@
           </div>
         </div>
       </div>
-    </div>
   </div>
 </template>
 
@@ -350,43 +344,21 @@ async function checkIn(card) {
 </script>
 
 <style scoped>
-/* ===== 頁面容器 ===== */
-.page {
-  height: 100dvh;
-}
-
-/* ===== Fixed PageHeader ===== */
-/*
-  padding-top 40px + h1 (3.2rem × 1.2) ≈ 38px = 78px total wrapper height
-  content top = 78px + 32px gap = 110px
-*/
-.header-wrapper {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
-  padding: var(--spacing-page-top) var(--spacing-page-x) 0;
-  background: transparent;
+/* ===== PageHeader 區 ===== */
+.page-header {
+  flex-shrink: 0;
+  padding-top: 8px;
 }
 
 /* ===== 主內容捲動區 ===== */
-/*
-  top: 110px（header 78px + gap 32px）
-  bottom: 90px（BottomNav top 58px + gap 32px）
-*/
-.main-content {
-  position: fixed;
-  top: 110px;
-  bottom: 90px;
-  left: 0;
-  right: 0;
-  padding: 0 var(--spacing-page-x) var(--spacing-page-x);
+.page-content {
+  flex: 1;
   overflow-y: auto;
+  padding: 16px 0 24px;
   scrollbar-width: none;
 }
 
-.main-content::-webkit-scrollbar {
+.page-content::-webkit-scrollbar {
   display: none;
 }
 
@@ -519,22 +491,6 @@ async function checkIn(card) {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: var(--spacing-gap-card);
-  }
-
-  /*
-    置中於 sidebar 右側空間（100vw - 80px），max-width 800px：
-    left = 80px + max(0, (100vw - 880px) / 2)
-    right = max(0, (100vw - 880px) / 2)
-  */
-  .header-wrapper {
-    left: max(80px, calc(80px + (100vw - 880px) / 2));
-    right: max(0px, calc((100vw - 880px) / 2));
-  }
-
-  .main-content {
-    left: max(80px, calc(80px + (100vw - 880px) / 2));
-    right: max(0px, calc((100vw - 880px) / 2));
-    bottom: 32px;
   }
 }
 </style>

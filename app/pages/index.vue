@@ -1,8 +1,6 @@
 <template>
   <div class="page">
-    <BottomNav active="home" />
-
-    <div ref="mainContentEl" class="main-content">
+  <div ref="mainContentEl" class="page-content">
       <!-- 對話區 -->
       <div ref="chatEl" class="chat-area">
         <!-- 督促提醒文字（非對話模式） -->
@@ -399,21 +397,25 @@ function scrollToBottom() {
 <style scoped>
 /* ===== 頁面容器 ===== */
 .page {
-  height: 100%;
+  position: relative;
+  flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  position: relative;
-  padding-bottom: 60px; /* BottomNav 高度，讓 flex 內容不被蓋住 */
+  min-height: 0;
 }
 
-/* ===== 主內容區（可捲動） ===== */
-.main-content {
+/* ===== 聊天區（可捲動） ===== */
+.page-content {
   flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  padding: 48px 24px 24px;
+  padding: 32px 0 150px;
+  scrollbar-width: none;
+}
+
+.page-content::-webkit-scrollbar {
+  display: none;
 }
 
 /* ===== 對話內容區 ===== */
@@ -441,10 +443,13 @@ function scrollToBottom() {
   margin: 0;
 }
 
-/* ===== Input 區 ===== */
+/* ===== Input 區（absolute，相對於 .page 定位） ===== */
 .input-section {
-  flex-shrink: 0;
-  padding: 8px 24px 12px;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
 }
 
 /* 外層：漸層背景 + border + shadow + 8px padding */
@@ -520,31 +525,4 @@ function scrollToBottom() {
   pointer-events: none;
 }
 
-/* ===== Desktop (≥ 768px) ===== */
-@media (min-width: 768px) {
-  .page {
-    padding-left: 80px;
-    padding-bottom: 0;
-  }
-
-  .main-content {
-    max-width: 800px;
-    margin: 0 auto;
-    width: 100%;
-    padding-bottom: 0;
-  }
-
-  /* Desktop: input 在 flex flow 內，非 fixed */
-  .input-section {
-    max-width: 800px;
-    margin: 0 auto;
-    width: 100%;
-    padding: 0 var(--spacing-page-x) var(--spacing-page-bottom);
-  }
-
-  /* Desktop: chat-area 恢復正常 padding-bottom */
-  .chat-area {
-    padding-bottom: var(--spacing-gap-chat);
-  }
-}
 </style>

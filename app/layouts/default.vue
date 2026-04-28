@@ -3,9 +3,16 @@
     <!-- 背景圖層（position: fixed 避免 iOS Safari background-attachment 問題） -->
     <div class="layout-bg" aria-hidden="true" />
 
-    <!-- 內容層 -->
-    <div class="layout-content">
-      <slot />
+    <div class="layout-body">
+      <!-- 主內容區（DOM 在前，桌機透過 order: 2 移到右側） -->
+      <div class="main-wrap">
+        <div class="main-content">
+          <slot />
+        </div>
+      </div>
+
+      <!-- 手機版：DOM 在後自然沉底；桌機版：order: 1 移到左側 -->
+      <BottomNav :active="activeRoute" />
     </div>
 
     <!-- 全域右上角使用者 icon -->
@@ -38,8 +45,9 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
+const route = useRoute()
 const supabase = useSupabaseClient()
 const user = useSupabaseUser()
 
@@ -54,6 +62,15 @@ useHead({
     { rel: 'apple-touch-icon', href: '/icons/icon-192.png' },
     { rel: 'apple-touch-startup-image', href: '/icons/icon-512.png' }
   ]
+})
+
+const activeRoute = computed(() => {
+  const path = route.path
+  if (path === '/') return 'home'
+  if (path.startsWith('/plans')) return 'plans'
+  if (path.startsWith('/records')) return 'records'
+  if (path.startsWith('/setting')) return 'setting'
+  return ''
 })
 
 const showLogoutModal = ref(false)
@@ -95,10 +112,12 @@ body {
 .layout {
   position: fixed;
   inset: 0;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
 
-/* 背景圖層：position: fixed 確保 iOS Safari 正確渲染 */
 .layout-bg {
   position: fixed;
   inset: 0;
@@ -109,19 +128,29 @@ body {
   background-repeat: no-repeat;
 }
 
-@media (min-width: 768px) {
-  .layout-bg {
-    background-image: url('/images/page-bg.svg');
-  }
-}
-
-/* 內容層浮在背景上 */
-.layout-content {
+.layout-body {
   position: relative;
   z-index: 1;
-  width: 100%;
-  height: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.main-wrap {
+  flex: 1;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.main-content {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
 }
 
 /* ===== 使用者 icon 按鈕 ===== */
@@ -200,5 +229,28 @@ body {
   padding: 10px 20px;
   font-size: var(--typography-caption-size);
   white-space: nowrap;
+}
+
+/* ===== Desktop (≥ 768px) ===== */
+@media (min-width: 768px) {
+  .layout-bg {
+    background-image: url('/images/page-bg.svg');
+  }
+
+  .layout-body {
+    flex-direction: row;
+  }
+
+  .main-wrap {
+    order: 2;
+    flex: 1;
+    padding-left: 24px;
+  }
+
+  .main-content {
+    max-width: 800px;
+    height: 100%;
+    margin: 0 auto;
+  }
 }
 </style>
