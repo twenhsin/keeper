@@ -41,11 +41,11 @@
             @compositionstart="isComposing = true"
             @compositionend="isComposing = false"
           />
-          <div v-if="inputText.trim() || isLoadingChat" class="input-actions">
-            <button v-if="!isLoadingChat" class="send-btn" type="button" aria-label="Send" @click="sendMessage">
+          <div class="input-actions">
+            <button v-if="inputText.trim() && !isLoadingChat" class="send-btn" type="button" aria-label="Send" @click="sendMessage">
               <ArrowUp :size="16" :stroke-width="2" />
             </button>
-            <button v-else class="send-btn" type="button" aria-label="Stop" @click="stopMessage">
+            <button v-else-if="isLoadingChat" class="send-btn" type="button" aria-label="Stop" @click="stopMessage">
               <Square :size="16" :stroke-width="2" />
             </button>
           </div>
@@ -85,7 +85,7 @@ const isComposing = ref(false)
 const inputText = ref('')
 const mainContentEl = ref(null)
 const textareaEl = ref(null)
-const MIN_HEIGHT = 76
+const MIN_HEIGHT = 24
 let toastTimer = null
 const abortController = ref(null)
 const pendingConfirm = ref(false)
@@ -481,7 +481,8 @@ function scrollToBottom() {
   font-family: inherit;
   font-size: 16px;
   color: var(--text-primary);
-  line-height: var(--typography-body-line-height);
+  line-height: 1.5;
+  min-height: 24px;
   overflow-y: hidden;
   box-sizing: border-box;
 }
