@@ -147,9 +147,10 @@ body {
 
 .main-content {
   width: 100%;
+  flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  min-height: 0;
   position: relative;
 }
 

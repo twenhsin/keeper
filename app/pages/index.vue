@@ -401,26 +401,22 @@ function scrollToBottom() {
 <style scoped>
 /* ===== 頁面容器 ===== */
 .page {
-  position: relative;
   flex: 1;
   display: flex;
   flex-direction: column;
   min-height: 0;
-  justify-content: flex-end;
+  padding-bottom: 24px;
 }
 
 /* ===== 聊天區（可捲動） ===== */
 .page-content {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  flex: 1;
   overflow-y: auto;
+  min-height: 0;
+  padding: 32px 0 0;
+  scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  padding: 32px 0 200px;
-  scrollbar-width: none;
 }
 
 .page-content::-webkit-scrollbar {
@@ -456,7 +452,6 @@ function scrollToBottom() {
 .input-section {
   flex-shrink: 0;
   z-index: 50;
-  padding-bottom: 24px;
 }
 
 /* 外層：漸層背景 + border + shadow + 8px padding */
