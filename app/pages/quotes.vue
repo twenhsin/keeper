@@ -192,6 +192,7 @@ function handleInputKeyDown(e) {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  padding-bottom: 24px;
 }
 
 .page-header {
