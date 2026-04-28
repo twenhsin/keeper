@@ -38,6 +38,8 @@
             @input="resizeTextarea"
             @focus="enterChatMode"
             @keydown="handleInputKeyDown"
+            @compositionstart="isComposing = true"
+            @compositionend="isComposing = false"
           />
           <div v-if="inputText.trim() || isLoadingChat" class="input-actions">
             <button v-if="!isLoadingChat" class="send-btn" type="button" aria-label="Send" @click="sendMessage">
@@ -79,6 +81,7 @@ const userHabits = ref([])
 const userPlans = ref([])
 const userTaskCards = ref([])
 
+const isComposing = ref(false)
 const inputText = ref('')
 const mainContentEl = ref(null)
 const textareaEl = ref(null)
@@ -190,10 +193,11 @@ async function sendMessage() {
   if (!content || isLoadingChat.value) return
 
   inputText.value = ''
+  await nextTick()
+  resizeTextarea()
   messages.value.push({ role: 'user', content })
   isLoadingChat.value = true
   await nextTick()
-  resizeTextarea()
   scrollToBottom()
 
   pendingConfirm.value = false
@@ -380,7 +384,7 @@ function resizeTextarea() {
 
 function handleInputKeyDown(e) {
   if (e.key !== 'Enter') return
-  // 手機版不用 Enter 送出，只用送出按鈕
+  if (isComposing.value) return
   if (window.matchMedia('(max-width: 767px)').matches) return
   if (e.shiftKey || e.metaKey || e.ctrlKey) return
   e.preventDefault()
@@ -410,7 +414,7 @@ function scrollToBottom() {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  padding: 32px 0 150px;
+  padding: 32px 0 200px;
   scrollbar-width: none;
 }
 

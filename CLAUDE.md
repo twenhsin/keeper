@@ -1,7 +1,7 @@
 # CLAUDE.md
 > Keeper 專案入口文件
 > 每次開啟專案時優先讀取此文件
-> 最後更新：2026-04-27
+> 最後更新：2026-04-28
 
 ---
 
@@ -9,7 +9,7 @@
 
 **產品名稱：** Keeper
 **定位：** 個人 AI 行為督導工具
-**完整規格：** `生活督導App_規格書_v6.md`
+**完整規格：** `生活督導App_規格書_v9.md`
 
 ---
 
@@ -63,7 +63,7 @@ keeper/
 │   │   ├── ProgressCard.vue
 │   │   └── FileCard.vue
 │   ├── layouts/
-│   │   └── default.vue          — 背景圖響應式 + viewport useHead 設定
+│   │   └── default.vue          — 全站 Layout 骨架（sidebar/bottom-nav/main-wrap/main-content）
 │   └── pages/
 │       ├── index.vue            — Home ✅（Claude API 對話接入完成）
 │       ├── plans.vue            — Plans ✅（Supabase 串接完成）
@@ -198,14 +198,25 @@ Vercel：Settings → Environment Variables 手動設定
 - index.vue 打卡後 Progress report 即時更新
 - Streaming 優化（reminder + chat）
 - reminder 模式減少 Supabase 查詢
-- [ ] reminder 查詢移至前端
+- reminder 查詢移至前端 （habits/plans/taskCards/notes）
 - chat.post.ts reminder 模式 Supabase 查詢精簡（habits/plans/taskCards 移至前端傳入）
 - Notes 只在 reminder 模式讀取，chat 模式不帶入
+- ✅ 全站 Layout 重構（default.vue 統一管理 sidebar/bottom-nav/main-wrap）
+- ✅ 桌機版 RWD 修正（sidebar 左側、main-content 置中、padding 24px）
+- ✅ Setting 頁 Info icon tooltip
+- ✅ Setting 頁 Project 區塊重構（條列 + Toggle + 彈窗編輯）
+- ✅ project_files 新增 is_active 欄位
+- ✅ 主要文字色更新為 #363134
+- ✅ Keeper 任務確認兩層保護（pendingConfirm + system prompt）
+- ✅ index.vue 注音 Enter 誤送出修正
+- ✅ index.vue 誤送出後輸入框文字殘留修正
+- ✅ index.vue 輸入框遮住對話修正
 
 ### 待完成
 - [ ] pages/ui-kit.vue
-- [ ] Vercel Cron 推播通知（「需付費方案，暫緩」）
 - [ ] 手機版 iOS Safari 鍵盤收起後底部白色空白問題
+- [ ] Quotes 功能（Plans 頁第五個 Tab，一鍵收藏 + 手動輸入）
+- [ ] 對話匯出到 Obsidian
 
 ### 待辦清單（功能擴充）
 - [ ] 對話暫停後 AI 回應顯示被截斷的處理
@@ -218,4 +229,4 @@ Vercel：Settings → Environment Variables 手動設定
 - [ ] AI 回饋文字（缺席補發後）
 - [ ] 計畫視覺圖
 - [ ] Vercel Cron 推播通知（需 Vercel 付費方案，暫緩）
-- [ ] 明天測試：打卡後 Progress report 即時更新
+
