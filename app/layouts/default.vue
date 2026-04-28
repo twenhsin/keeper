@@ -69,6 +69,7 @@ const activeRoute = computed(() => {
   if (path === '/') return 'home'
   if (path.startsWith('/plans')) return 'plans'
   if (path.startsWith('/records')) return 'records'
+  if (path.startsWith('/quotes')) return 'quotes'
   if (path.startsWith('/setting')) return 'setting'
   return ''
 })

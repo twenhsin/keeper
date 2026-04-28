@@ -17,7 +17,7 @@
 </template>
 
 <script setup>
-import { Home, LayoutList, CheckSquare, Settings } from 'lucide-vue-next'
+import { Home, LayoutList, CheckSquare, BookMarked, Settings } from 'lucide-vue-next'
 
 defineProps({
   active: {
@@ -30,6 +30,7 @@ const navItems = [
   { key: 'home',    to: '/',        label: 'Home',    icon: Home },
   { key: 'plans',   to: '/plans',   label: 'Plans',   icon: LayoutList },
   { key: 'records', to: '/records', label: 'Records', icon: CheckSquare },
+  { key: 'quotes',  to: '/quotes',  label: 'Quotes',  icon: BookMarked },
   { key: 'setting', to: '/setting', label: 'Setting', icon: Settings }
 ]
 </script>
