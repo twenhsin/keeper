@@ -115,7 +115,7 @@ body {
   top: 0;
   left: 0;
   right: 0;
-  height: 100dvh;
+  bottom: 0;
   padding: 24px;
   display: flex;
   flex-direction: column;
