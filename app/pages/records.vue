@@ -16,10 +16,13 @@
           :opacity="80"
           class="checkin-card"
         >
-          <p class="checkin-title">
-            {{ card.title }}
-            <span v-if="card.isExtra" class="extra-badge">＋加分</span>
-          </p>
+          <div class="checkin-header">
+            <p class="checkin-date-label">{{ formatCardDate(card.scheduledDate) }}</p>
+            <p class="checkin-title">
+              {{ card.title }}
+              <span v-if="card.isExtra" class="extra-badge">＋加分</span>
+            </p>
+          </div>
           <AppButton label="Check in" class="checkin-action-btn" @click="checkIn(card)" />
         </BaseCard>
       </div>
@@ -35,7 +38,10 @@
             :opacity="80"
             class="checkin-card"
           >
-            <p class="checkin-title">{{ card.title }}</p>
+            <div class="checkin-header">
+              <p class="checkin-date-label">{{ formatCardDate(card.scheduledDate) }}</p>
+              <p class="checkin-title">{{ card.title }}</p>
+            </div>
             <p class="checkin-date">補 {{ card.scheduledDate.slice(5).replace('-', '/') }}</p>
             <AppButton label="Check in" class="checkin-action-btn" @click="checkIn(card)" />
           </BaseCard>
@@ -87,6 +93,13 @@ const makeupCards = ref([])
 const progressItems = ref([])
 
 /* ===== 日期工具 ===== */
+function formatCardDate(dateStr) {
+  const days = ['日', '一', '二', '三', '四', '五', '六']
+  const [y, m, d] = dateStr.split('-').map(Number)
+  const weekday = days[new Date(y, m - 1, d).getDay()]
+  return `${m}/${d}（${weekday}）`
+}
+
 function getTodayStr() {
   const now = new Date()
   const y = now.getFullYear()
@@ -391,6 +404,20 @@ async function checkIn(card) {
   height: 40px;
   padding-top: 0;
   padding-bottom: 0;
+}
+
+.checkin-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.checkin-date-label {
+  font-size: 1.6rem;
+  color: var(--text-primary);
+  margin: 0;
+  text-align: center;
 }
 
 .checkin-title {

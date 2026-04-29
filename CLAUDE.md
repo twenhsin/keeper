@@ -1,7 +1,7 @@
 # CLAUDE.md
 > Keeper 專案入口文件
 > 每次開啟專案時優先讀取此文件
-> 最後更新：2026-04-28
+> 最後更新：2026-04-29
 
 ---
 
@@ -34,7 +34,7 @@
 ```
 keeper/
 ├── CLAUDE.md                    — 本文件，專案入口
-├── 生活督導App_規格書_v6.md      — 完整產品規格
+├── 生活督導App_規格書_v9.md      — 完整產品規格
 ├── Skills/
 │   ├── dev/                     — 開發工具 Skills
 │   │   ├── design-system.md
@@ -71,6 +71,7 @@ keeper/
 │       ├── records-detail-[id].vue
 │       ├── setting.vue          — Setting ✅（API Key 寫入 Supabase）
 │       ├── login.vue
+│       ├── quotes.vue           — Quotes ✅（Supabase 串接完成）
 │       └── ui-kit.vue           — 待完成
 ├── server/
 │   └── api/
@@ -150,7 +151,7 @@ Vercel：Settings → Environment Variables 手動設定
 ---
 
 ## 七、當前開發進度
-> 最後更新：2026-04-16
+> 最後更新：2026-04-29
 
 ### 已完成
 - assets/css/tokens.css（169 tokens）
@@ -221,11 +222,16 @@ Vercel：Settings → Environment Variables 手動設定
 - ✅ Keeper 任務確認兩層保護（pendingConfirm + system prompt）
 - ✅ index.vue 注音 Enter 誤送出修正
 - ✅ index.vue 誤送出後輸入框文字殘留修正
+- ✅ Quotes 頁面（獨立路由 /quotes，Supabase 串接完成）
+- ✅ BottomNav 新增第五個 item（手機文字 / 桌機 BookMarked icon）
+- ✅ quotes 資料表建立（含 RLS）
+- ✅ reminder [QUOTE] 標記解析 + 愛心 icon 一鍵收藏
+- ✅ chat.post.ts system prompt 加入 [QUOTE] 標記規則
+- ✅ 對話文字 user-select: text（可選取複製）
 
 ### 待完成
 - [ ] pages/ui-kit.vue
-- [ ] 手機版 iOS Safari 鍵盤收起後底部白色空白問題
-- [ ] Quotes 功能（Plans 頁第五個 Tab，一鍵收藏 + 手動輸入）
+- [x] 手機版 iOS Safari 鍵盤收起後底部白色空白問題
 - [ ] 對話匯出到 Obsidian
 
 ### 待辦清單（功能擴充）
