@@ -11,7 +11,7 @@
               <span v-if="seg.type === 'text'">{{ seg.content }}</span>
               <div v-else class="quote-block">
                 <span class="quote-text">{{ seg.content }}</span>
-                <button class="quote-heart" type="button" aria-label="收藏" @click="saveQuote(seg.content)">
+                <button class="quote-heart" :class="{ saved: savedQuotes.has(si) }" type="button" aria-label="收藏" @click="saveQuote(seg.content, si)">
                   <Heart :size="24" :stroke-width="1.5" />
                 </button>
               </div>
@@ -395,10 +395,16 @@ const reminderSegments = computed(() => {
   return segments
 })
 
-async function saveQuote(content) {
+const savedQuotes = ref(new Set())
+
+async function saveQuote(content, index) {
   if (!userId.value) return
   const { error } = await supabase.from('quotes').insert({ user_id: userId.value, content })
-  if (!error) showToast('已收藏')
+  if (!error) {
+    savedQuotes.value.add(index)
+    savedQuotes.value = new Set(savedQuotes.value)
+    showToast('已收藏')
+  }
 }
 
 /* ===== Toast ===== */
@@ -513,6 +519,10 @@ function scrollToBottom() {
   display: flex;
   align-items: center;
   line-height: 1;
+}
+
+.quote-heart.saved svg {
+  fill: #FF7FDC;
 }
 
 /* ===== Input 區 ===== */
