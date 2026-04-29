@@ -284,7 +284,7 @@ async function sendMessage() {
 function enterChatMode() {
   if (isChatMode.value) return
   isChatMode.value = true
-  nextTick(scrollToBottom)
+  setTimeout(() => nextTick(scrollToBottom), 350)
 }
 
 /* ===== 寫回 Supabase ===== */
@@ -428,6 +428,7 @@ function handleInputKeyDown(e) {
 }
 
 function scrollToBottom() {
+  if (!isChatMode.value) return
   const el = mainContentEl.value
   if (!el) return
   el.scrollTop = el.scrollHeight
@@ -453,6 +454,7 @@ function scrollToBottom() {
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
+  scroll-behavior: smooth;
 }
 
 .page-content::-webkit-scrollbar {
