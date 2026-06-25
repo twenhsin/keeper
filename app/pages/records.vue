@@ -195,10 +195,13 @@ onMounted(async () => {
 
       let isPeriodDue = false
       if (hasPeriod) {
-        const baseStr = lastDoneMap[h.id] ?? h.created_at.slice(0, 10)
-        const base = new Date(baseStr); base.setHours(0, 0, 0, 0)
-        const today = new Date(); today.setHours(0, 0, 0, 0)
-        isPeriodDue = Math.round((today - base) / 86400000) >= h.period_days
+        if (!lastDoneMap[h.id]) {
+          isPeriodDue = true
+        } else {
+          const base = new Date(lastDoneMap[h.id]); base.setHours(0, 0, 0, 0)
+          const today = new Date(); today.setHours(0, 0, 0, 0)
+          isPeriodDue = Math.round((today - base) / 86400000) >= h.period_days
+        }
       }
 
       if (isFixed) {
