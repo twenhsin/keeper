@@ -15,9 +15,7 @@ export default defineEventHandler(async (event) => {
 
   if (!users || users.length === 0) return { ok: true, processed: 0 }
 
-  const yesterday = new Date()
-  yesterday.setDate(yesterday.getDate() - 1)
-  const yesterdayStr = yesterday.toLocaleDateString('zh-TW', {
+  const todayStr = new Date().toLocaleDateString('zh-TW', {
     timeZone: 'Asia/Taipei',
     year: 'numeric', month: '2-digit', day: '2-digit'
   }).replace(/\//g, '-')
@@ -26,8 +24,8 @@ export default defineEventHandler(async (event) => {
 
   for (const user of users) {
     if (!user.api_key || !user.today_messages?.length) continue
-    // 只處理昨天的對話
-    if (user.messages_date !== yesterdayStr) continue
+    // 只處理今天的對話（測試用）
+    if (user.messages_date !== todayStr) continue
 
     // 組成摘要 prompt
     const conversationText = user.today_messages
